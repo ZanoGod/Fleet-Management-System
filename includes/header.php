@@ -3,6 +3,10 @@
 declare(strict_types=1);
 
 $pageTitle = $pageTitle ?? 'Fleet Management System';
+$pageSummary = $pageSummary ?? 'Manage fleet operations from one place.';
+$activePage = $activePage ?? 'dashboard';
+$pageActions = $pageActions ?? '';
+$navigationItems = app_navigation();
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -14,12 +18,58 @@ $pageTitle = $pageTitle ?? 'Fleet Management System';
     <link rel="stylesheet" href="assets/css/style.css">
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-dark topbar shadow-sm">
-        <div class="container">
-            <a class="navbar-brand fw-semibold" href="index.php">GSS Fleet Management</a>
-            <span class="navbar-text text-white-50 small">Web-based booking and vehicle assignment system</span>
-        </div>
-    </nav>
+    <div class="sidebar-backdrop" data-sidebar-close></div>
+    <div class="app-shell">
+        <aside class="sidebar" id="appSidebar">
+            <div class="sidebar-brand">
+                <div class="brand-mark">FM</div>
+                <div>
+                    <span class="sidebar-kicker">GSS</span>
+                    <h2>Fleet Management</h2>
+                </div>
+            </div>
 
-    <main class="py-4">
-        <div class="container">
+            <div class="sidebar-section-label">Navigation</div>
+            <nav class="sidebar-nav">
+                <?php foreach ($navigationItems as $item): ?>
+                    <a class="sidebar-link <?= e(nav_is_active($activePage, $item['key'])) ?>" href="<?= e($item['path']) ?>">
+                        <span class="sidebar-link-icon"><?= e($item['icon']) ?></span>
+                        <span>
+                            <strong><?= e($item['label']) ?></strong>
+                            <small><?= e($item['description']) ?></small>
+                        </span>
+                    </a>
+                <?php endforeach; ?>
+            </nav>
+
+            <div class="sidebar-cta">
+                <span class="sidebar-section-label">Quick Action</span>
+                <h3>Need a new trip assignment?</h3>
+                <p>Create a booking and connect it with the right car and driver.</p>
+                <a class="btn btn-accent w-100" href="create.php">Add Booking</a>
+            </div>
+        </aside>
+
+        <div class="app-main">
+            <header class="app-topbar">
+                <div class="page-heading">
+                    <button class="sidebar-toggle" type="button" data-sidebar-toggle aria-label="Open menu">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </button>
+
+                    <div>
+                        <div class="page-kicker">Web-Based Fleet System</div>
+                        <h1><?= e($pageTitle) ?></h1>
+                        <p><?= e($pageSummary) ?></p>
+                    </div>
+                </div>
+
+                <div class="topbar-actions">
+                    <span class="date-chip"><?= e(date('d M Y')) ?></span>
+                    <?= $pageActions ?>
+                </div>
+            </header>
+
+            <main class="app-content">
