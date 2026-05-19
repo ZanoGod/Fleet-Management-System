@@ -1,0 +1,174 @@
+:root {
+    --brand-900: #1f5a45;
+    --brand-800: #2a6a52;
+    --brand-700: #34785d;
+    --brand-100: #e7f3ed;
+    --slate-900: #23313d;
+    --slate-600: #5d6f7f;
+    --slate-300: #dbe4ea;
+    --surface: #f4f7f8;
+    --white: #ffffff;
+}
+
+body {
+    background:
+        radial-gradient(circle at top right, rgba(96, 167, 132, 0.18), transparent 26%),
+        linear-gradient(180deg, #f8fbf9 0%, #eef4f5 100%);
+    color: var(--slate-900);
+    min-height: 100vh;
+}
+
+.topbar {
+    background: linear-gradient(135deg, var(--brand-900), var(--brand-700));
+}
+
+.hero-panel {
+    background: rgba(255, 255, 255, 0.88);
+    border: 1px solid rgba(31, 90, 69, 0.08);
+    border-radius: 1.5rem;
+    padding: 2rem;
+    backdrop-filter: blur(8px);
+}
+
+.eyebrow {
+    display: inline-flex;
+    background: var(--brand-100);
+    color: var(--brand-900);
+    border-radius: 999px;
+    padding: 0.35rem 0.85rem;
+    font-size: 0.85rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    margin-bottom: 1rem;
+}
+
+.stat-card {
+    background: linear-gradient(180deg, #ffffff 0%, #f3f8f5 100%);
+    border: 1px solid rgba(31, 90, 69, 0.1);
+    border-radius: 1rem;
+    padding: 1.1rem 1rem;
+    height: 100%;
+}
+
+.stat-card span {
+    color: var(--slate-600);
+    display: block;
+    font-size: 0.9rem;
+    margin-bottom: 0.35rem;
+}
+
+.stat-card strong {
+    color: var(--brand-900);
+    font-size: 1.8rem;
+    line-height: 1;
+}
+
+.booking-table thead th {
+    background: #2f6f55;
+    color: var(--white);
+    font-weight: 600;
+    padding: 1rem 0.9rem;
+    border-bottom: 0;
+    white-space: nowrap;
+}
+
+.booking-table tbody td {
+    padding: 1rem 0.9rem;
+    border-color: rgba(35, 49, 61, 0.08);
+    vertical-align: middle;
+}
+
+.booking-table tbody tr:hover {
+    background: rgba(231, 243, 237, 0.55);
+}
+
+.table-pill,
+.status-pill {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 999px;
+    padding: 0.28rem 0.8rem;
+    font-size: 0.9rem;
+    line-height: 1.2;
+}
+
+.car-pill {
+    background: #fce5b0;
+    color: #825b00;
+}
+
+.plate-pill {
+    background: #dcebc8;
+    color: #2f6f22;
+}
+
+.operator-pill {
+    background: #f9d6d1;
+    color: #992c1f;
+}
+
+.driver-pill {
+    background: #d6ebf5;
+    color: #245d78;
+}
+
+.status-pill {
+    font-weight: 700;
+}
+
+.status-pending {
+    background: #ffe8b6;
+    color: #8b5b00;
+}
+
+.status-confirm {
+    background: #c9efc8;
+    color: #1d7c3b;
+}
+
+.status-service {
+    background: #cfe5ff;
+    color: #1d4f91;
+}
+
+.status-completed {
+    background: #dbd3ff;
+    color: #4f3b9b;
+}
+
+.status-cancelled {
+    background: #ffd5d5;
+    color: #a02424;
+}
+
+.remark-cell {
+    max-width: 240px;
+    color: var(--slate-600);
+}
+
+.form-card {
+    border-radius: 1.5rem;
+}
+
+.form-control,
+.form-select {
+    border-radius: 0.9rem;
+    border-color: var(--slate-300);
+    padding: 0.8rem 1rem;
+}
+
+.form-control:focus,
+.form-select:focus {
+    border-color: rgba(42, 106, 82, 0.5);
+    box-shadow: 0 0 0 0.25rem rgba(42, 106, 82, 0.15);
+}
+
+.btn {
+    border-radius: 0.9rem;
+}
+
+@media (max-width: 991.98px) {
+    .hero-panel {
+        padding: 1.5rem;
+    }
+}
