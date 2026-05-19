@@ -7,6 +7,19 @@ function e(?string $value): string
     return htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
 }
 
+function asset_url(string $path): string
+{
+    $normalizedPath = ltrim(str_replace('\\', '/', $path), '/');
+    $absolutePath = dirname(__DIR__) . DIRECTORY_SEPARATOR
+        . str_replace('/', DIRECTORY_SEPARATOR, $normalizedPath);
+
+    if (!is_file($absolutePath)) {
+        return $normalizedPath;
+    }
+
+    return $normalizedPath . '?v=' . filemtime($absolutePath);
+}
+
 function redirect(string $path): never
 {
     header('Location: ' . $path);
@@ -49,6 +62,39 @@ function format_display_date(?string $date): string
     return $timestamp ? date('d M Y', $timestamp) : $date;
 }
 
+function format_compact_date_range(?string $startDate, ?string $endDate): string
+{
+    if (($startDate === null || $startDate === '') && ($endDate === null || $endDate === '')) {
+        return '-';
+    }
+
+    $startTimestamp = $startDate !== null && $startDate !== '' ? strtotime($startDate) : false;
+    $endTimestamp = $endDate !== null && $endDate !== '' ? strtotime($endDate) : false;
+
+    if (!$startTimestamp || !$endTimestamp) {
+        $parts = array_values(array_filter([
+            format_display_date($startDate),
+            format_display_date($endDate),
+        ], static fn (string $value): bool => $value !== '-'));
+
+        return $parts === [] ? '-' : implode(' - ', $parts);
+    }
+
+    if (date('Y-m-d', $startTimestamp) === date('Y-m-d', $endTimestamp)) {
+        return date('d M Y', $startTimestamp);
+    }
+
+    if (date('Y-m', $startTimestamp) === date('Y-m', $endTimestamp)) {
+        return date('d', $startTimestamp) . ' - ' . date('d M Y', $endTimestamp);
+    }
+
+    if (date('Y', $startTimestamp) === date('Y', $endTimestamp)) {
+        return date('d M', $startTimestamp) . ' - ' . date('d M Y', $endTimestamp);
+    }
+
+    return date('d M Y', $startTimestamp) . ' - ' . date('d M Y', $endTimestamp);
+}
+
 function booking_statuses(): array
 {
     return [
@@ -71,12 +117,28 @@ function status_badge_class(string $status): string
     };
 }
 
+function booking_even_odd_options(): array
+{
+    return [
+        'Even',
+        'Odd',
+    ];
+}
+
 function car_statuses(): array
 {
     return [
         'Available',
         'Assigned',
         'Maintenance',
+        'Inactive',
+    ];
+}
+
+function operator_statuses(): array
+{
+    return [
+        'Active',
         'Inactive',
     ];
 }
@@ -94,6 +156,33 @@ function driver_statuses(): array
 function selected(mixed $actual, mixed $expected): string
 {
     return (string) $actual === (string) $expected ? 'selected' : '';
+}
+
+function in_allowed_values(string $value, array $allowedValues): bool
+{
+    return in_array($value, $allowedValues, true);
+}
+
+function row_id_exists(array $rows, int $expectedId): bool
+{
+    foreach ($rows as $row) {
+        if ((int) ($row['id'] ?? 0) === $expectedId) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+function find_row_by_id(array $rows, int $expectedId): ?array
+{
+    foreach ($rows as $row) {
+        if ((int) ($row['id'] ?? 0) === $expectedId) {
+            return $row;
+        }
+    }
+
+    return null;
 }
 
 function app_navigation(): array
@@ -126,6 +215,13 @@ function app_navigation(): array
             'path' => 'drivers.php',
             'description' => 'Driver directory',
             'icon' => 'DR',
+        ],
+        [
+            'key' => 'operators',
+            'label' => 'Operators',
+            'path' => 'operators.php',
+            'description' => 'Operator directory',
+            'icon' => 'OP',
         ],
         [
             'key' => 'reports',
@@ -162,6 +258,14 @@ function driver_status_class(string $status): string
     };
 }
 
+function operator_status_class(string $status): string
+{
+    return match (strtolower($status)) {
+        'active' => 'resource-available',
+        default => 'resource-inactive',
+    };
+}
+
 function fetch_cars_for_select(mysqli $db): array
 {
     $cars = [];
@@ -184,7 +288,7 @@ function fetch_drivers_for_select(mysqli $db): array
 {
     $drivers = [];
     $result = $db->query(
-        'SELECT id, full_name, license_no, driver_status
+        'SELECT id, full_name, phone_number, driver_status
          FROM drivers
          ORDER BY full_name ASC'
     );
@@ -196,6 +300,64 @@ function fetch_drivers_for_select(mysqli $db): array
     }
 
     return $drivers;
+}
+
+function fetch_operators_for_select(mysqli $db, bool $activeOnly = false): array
+{
+    $operators = [];
+    $sql = 'SELECT id, full_name, phone_number, operator_status
+            FROM operators';
+
+    if ($activeOnly) {
+        $sql .= " WHERE operator_status = 'Active'";
+    }
+
+    $sql .= ' ORDER BY full_name ASC';
+    $result = $db->query($sql);
+
+    if ($result instanceof mysqli_result) {
+        while ($row = $result->fetch_assoc()) {
+            $operators[] = $row;
+        }
+    }
+
+    return $operators;
+}
+
+function booking_car_display(array $booking): string
+{
+    $customCarName = trim((string) ($booking['custom_car_name'] ?? ''));
+
+    if ($customCarName !== '') {
+        return $customCarName;
+    }
+
+    $parts = array_values(array_filter([
+        trim((string) ($booking['car_type'] ?? '')),
+        trim((string) ($booking['plate_no'] ?? '')),
+    ], static fn (?string $value): bool => $value !== null && $value !== ''));
+
+    return $parts === [] ? '-' : implode(' | ', $parts);
+}
+
+function booking_driver_display(array $booking): string
+{
+    $customDriverName = trim((string) ($booking['custom_driver_name'] ?? ''));
+
+    if ($customDriverName !== '') {
+        return $customDriverName;
+    }
+
+    $driverName = trim((string) ($booking['driver_name'] ?? ''));
+
+    return $driverName !== '' ? $driverName : '-';
+}
+
+function booking_operator_display(array $booking): string
+{
+    $operatorName = trim((string) ($booking['operator_full_name'] ?? $booking['operator_name'] ?? ''));
+
+    return $operatorName !== '' ? $operatorName : '-';
 }
 
 function bind_statement_params(mysqli_stmt $statement, string $types, array $values): void

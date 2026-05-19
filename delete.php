@@ -28,8 +28,14 @@ if (!$statement instanceof mysqli_stmt) {
 }
 
 $statement->bind_param('i', $id);
-$statement->execute();
+$success = $statement->execute();
+$affectedRows = $statement->affected_rows;
 $statement->close();
 
-set_flash('success', 'Booking deleted successfully.');
+if ($success && $affectedRows > 0) {
+    set_flash('success', 'Booking deleted successfully.');
+} else {
+    set_flash('danger', 'Booking could not be deleted or was already removed.');
+}
+
 redirect('bookings.php');

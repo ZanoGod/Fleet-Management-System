@@ -6,7 +6,7 @@ require_once __DIR__ . '/includes/bootstrap.php';
 
 $activePage = 'bookings';
 $pageTitle = 'Bookings';
-$pageSummary = 'Create, update, and monitor fleet trip bookings without the Even / Odd column.';
+$pageSummary = 'Create, update, and monitor fleet trip bookings with flexible car and driver entries.';
 $pageActions = '<a class="btn btn-accent" href="create.php">Add Booking</a>';
 $flash = get_flash();
 
@@ -31,10 +31,10 @@ if ($db instanceof mysqli) {
     $params = [];
 
     if ($filters['search'] !== '') {
-        $where[] = '(b.guest_company_name LIKE ? OR c.car_type LIKE ? OR c.plate_no LIKE ? OR b.operator_name LIKE ? OR d.full_name LIKE ?)';
+        $where[] = '(b.guest_company_name LIKE ? OR c.car_type LIKE ? OR c.plate_no LIKE ? OR b.custom_car_name LIKE ? OR b.operator_name LIKE ? OR o.full_name LIKE ? OR d.full_name LIKE ? OR b.custom_driver_name LIKE ? OR b.even_odd LIKE ? OR b.remark LIKE ?)';
         $searchValue = '%' . $filters['search'] . '%';
-        $types .= 'sssss';
-        array_push($params, $searchValue, $searchValue, $searchValue, $searchValue, $searchValue);
+        $types .= 'ssssssssss';
+        array_push($params, $searchValue, $searchValue, $searchValue, $searchValue, $searchValue, $searchValue, $searchValue, $searchValue, $searchValue, $searchValue);
     }
 
     if ($filters['status'] !== '') {
@@ -58,17 +58,23 @@ if ($db instanceof mysqli) {
     $sql = "SELECT
                 b.id,
                 b.guest_company_name,
+                b.operator_id,
                 b.operator_name,
+                b.even_odd,
+                b.custom_car_name,
+                b.custom_driver_name,
                 b.start_date,
                 b.end_date,
                 b.status,
                 b.remark,
                 c.car_type,
                 c.plate_no,
-                d.full_name AS driver_name
+                d.full_name AS driver_name,
+                o.full_name AS operator_full_name
             FROM bookings AS b
-            INNER JOIN cars AS c ON c.id = b.car_id
-            INNER JOIN drivers AS d ON d.id = b.driver_id";
+            LEFT JOIN cars AS c ON c.id = b.car_id
+            LEFT JOIN drivers AS d ON d.id = b.driver_id
+            LEFT JOIN operators AS o ON o.id = b.operator_id";
 
     if ($where !== []) {
         $sql .= ' WHERE ' . implode(' AND ', $where);
@@ -174,20 +180,21 @@ require __DIR__ . '/includes/messages.php';
     <div class="section-title">
         <div>
             <h2>Booking List</h2>
-            <p>The Even / Odd column has been removed from this system design.</p>
+            <p>Each booking stays on a clean single line for faster scanning, with fullscreen available when you need more space.</p>
         </div>
+        <button type="button" class="btn btn-shell btn-sm" data-fullscreen-target="bookingsTablePanel">Fullscreen Table</button>
     </div>
 
-    <div class="table-responsive">
-        <table class="table data-table">
+    <div class="table-panel" id="bookingsTablePanel">
+        <div class="table-responsive table-full-content">
+            <table class="table data-table booking-list-table">
             <thead>
                 <tr>
-                    <th>Guest / Company Name</th>
-                    <th>Car Type</th>
-                    <th>Car No</th>
+                    <th>Guest / Company</th>
+                    <th>Car</th>
                     <th>Operator</th>
-                    <th>Start Date</th>
-                    <th>End Date</th>
+                    <th>E/O</th>
+                    <th>Dates</th>
                     <th>Driver</th>
                     <th>Status</th>
                     <th>Remark</th>
@@ -197,22 +204,45 @@ require __DIR__ . '/includes/messages.php';
             <tbody>
                 <?php if ($bookings === []): ?>
                     <tr>
-                        <td colspan="10" class="text-center py-5 text-muted-soft">No bookings found.</td>
+                        <td colspan="9" class="text-center py-5 text-muted-soft">No bookings found.</td>
                     </tr>
                 <?php else: ?>
                     <?php foreach ($bookings as $booking): ?>
+                        <?php
+                        $guestName = $booking['guest_company_name'];
+                        $carDisplay = booking_car_display($booking);
+                        $operatorDisplay = booking_operator_display($booking);
+                        $driverDisplay = booking_driver_display($booking);
+                        $dateRange = format_compact_date_range($booking['start_date'], $booking['end_date']);
+                        $remarkText = $booking['remark'] ?: '-';
+                        ?>
                         <tr>
-                            <td class="fw-semibold"><?= e($booking['guest_company_name']) ?></td>
-                            <td><span class="table-pill car-pill"><?= e($booking['car_type']) ?></span></td>
-                            <td><span class="table-pill plate-pill"><?= e($booking['plate_no']) ?></span></td>
-                            <td><span class="table-pill operator-pill"><?= e($booking['operator_name']) ?></span></td>
-                            <td><?= e(format_display_date($booking['start_date'])) ?></td>
-                            <td><?= e(format_display_date($booking['end_date'])) ?></td>
-                            <td><span class="table-pill driver-pill"><?= e($booking['driver_name']) ?></span></td>
-                            <td><span class="status-pill <?= e(status_badge_class($booking['status'])) ?>"><?= e($booking['status']) ?></span></td>
-                            <td class="remark-cell"><?= e($booking['remark'] ?: '-') ?></td>
+                            <td title="<?= e($guestName) ?>">
+                                <span class="booking-row-text fw-semibold"><?= e($guestName) ?></span>
+                            </td>
+                            <td>
+                                <span class="table-pill car-pill" title="<?= e($carDisplay) ?>"><?= e($carDisplay) ?></span>
+                            </td>
+                            <td>
+                                <span class="table-pill operator-pill" title="<?= e($operatorDisplay) ?>"><?= e($operatorDisplay) ?></span>
+                            </td>
+                            <td title="<?= e($booking['even_odd'] ?: '-') ?>">
+                                <span class="booking-row-text"><?= e($booking['even_odd'] ?: '-') ?></span>
+                            </td>
+                            <td title="<?= e($dateRange) ?>">
+                                <span class="booking-date-range"><?= e($dateRange) ?></span>
+                            </td>
+                            <td>
+                                <span class="table-pill driver-pill" title="<?= e($driverDisplay) ?>"><?= e($driverDisplay) ?></span>
+                            </td>
+                            <td>
+                                <span class="status-pill <?= e(status_badge_class($booking['status'])) ?>" title="<?= e($booking['status']) ?>"><?= e($booking['status']) ?></span>
+                            </td>
+                            <td class="remark-cell" title="<?= e($remarkText) ?>">
+                                <span class="booking-row-text"><?= e($remarkText) ?></span>
+                            </td>
                             <td class="text-center">
-                                <div class="d-flex justify-content-center gap-2 flex-wrap">
+                                <div class="table-actions">
                                     <a class="btn btn-sm btn-shell" href="edit.php?id=<?= e((string) $booking['id']) ?>">Edit</a>
                                     <form method="post" action="delete.php?id=<?= e((string) $booking['id']) ?>" onsubmit="return confirm('Delete this booking?');">
                                         <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
@@ -224,6 +254,7 @@ require __DIR__ . '/includes/messages.php';
                 <?php endif; ?>
             </tbody>
         </table>
+        </div>
     </div>
 </section>
 

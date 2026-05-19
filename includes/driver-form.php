@@ -29,11 +29,6 @@ $formTitle = $formTitle ?? 'Driver Form';
             </div>
 
             <div class="col-md-6">
-                <label for="license_no" class="form-label">License Number</label>
-                <input type="text" class="form-control" id="license_no" name="license_no" value="<?= e($driver['license_no'] ?? '') ?>" required>
-            </div>
-
-            <div class="col-md-6">
                 <label for="driver_status" class="form-label">Status</label>
                 <select class="form-select" id="driver_status" name="driver_status" required>
                     <?php foreach (driver_statuses() as $status): ?>

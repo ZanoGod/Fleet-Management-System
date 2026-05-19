@@ -29,10 +29,13 @@ if (!$statement instanceof mysqli_stmt) {
 
 $statement->bind_param('i', $id);
 $success = $statement->execute();
+$affectedRows = $statement->affected_rows;
 $statement->close();
 
-if ($success) {
+if ($success && $affectedRows > 0) {
     set_flash('success', 'Car deleted successfully.');
+} elseif ($success) {
+    set_flash('danger', 'Car could not be found.');
 } else {
     set_flash('danger', 'This car cannot be deleted because it is already used in a booking.');
 }

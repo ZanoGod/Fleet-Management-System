@@ -4,16 +4,16 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/includes/bootstrap.php';
 
-$activePage = 'drivers';
-$pageTitle = 'Edit Driver';
-$pageSummary = 'Update driver details and availability.';
-$pageActions = '<a class="btn btn-shell" href="drivers.php">All Drivers</a>';
+$activePage = 'operators';
+$pageTitle = 'Edit Operator';
+$pageSummary = 'Update operator details and availability.';
+$pageActions = '<a class="btn btn-shell" href="operators.php">All Operators</a>';
 $errors = [];
 $id = (int) ($_GET['id'] ?? 0);
 
 if ($id <= 0) {
-    set_flash('danger', 'Invalid driver ID.');
-    redirect('drivers.php');
+    set_flash('danger', 'Invalid operator ID.');
+    redirect('operators.php');
 }
 
 if ($db === null) {
@@ -23,48 +23,48 @@ if ($db === null) {
     return;
 }
 
-$statement = $db->prepare('SELECT * FROM drivers WHERE id = ? LIMIT 1');
+$statement = $db->prepare('SELECT * FROM operators WHERE id = ? LIMIT 1');
 
 if (!$statement instanceof mysqli_stmt) {
-    set_flash('danger', 'Failed to load the driver record.');
-    redirect('drivers.php');
+    set_flash('danger', 'Failed to load the operator record.');
+    redirect('operators.php');
 }
 
 $statement->bind_param('i', $id);
 $statement->execute();
 $result = $statement->get_result();
-$driver = $result->fetch_assoc();
+$operator = $result->fetch_assoc();
 $statement->close();
 
-if ($driver === null) {
-    set_flash('danger', 'Driver record not found.');
-    redirect('drivers.php');
+if ($operator === null) {
+    set_flash('danger', 'Operator record not found.');
+    redirect('operators.php');
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $driver = [
+    $operator = [
         'id' => $id,
         'full_name' => old($_POST, 'full_name'),
         'phone_number' => old($_POST, 'phone_number'),
-        'driver_status' => old($_POST, 'driver_status', 'Available'),
+        'operator_status' => old($_POST, 'operator_status', 'Active'),
         'note' => old($_POST, 'note'),
     ];
 
-    foreach (['full_name', 'phone_number', 'driver_status'] as $field) {
-        if ($driver[$field] === '') {
+    foreach (['full_name', 'operator_status'] as $field) {
+        if ($operator[$field] === '') {
             $errors[] = 'Please fill in all required fields.';
             break;
         }
     }
 
-    if (!in_allowed_values($driver['driver_status'], driver_statuses())) {
-        $errors[] = 'Please choose a valid driver status.';
+    if (!in_allowed_values($operator['operator_status'], operator_statuses())) {
+        $errors[] = 'Please choose a valid operator status.';
     }
 
     if ($errors === []) {
         $updateStatement = $db->prepare(
-            'UPDATE drivers
-             SET full_name = ?, phone_number = ?, license_no = NULL, driver_status = ?, note = ?
+            'UPDATE operators
+             SET full_name = ?, phone_number = ?, operator_status = ?, note = ?
              WHERE id = ?'
         );
 
@@ -73,20 +73,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } else {
             $updateStatement->bind_param(
                 'ssssi',
-                $driver['full_name'],
-                $driver['phone_number'],
-                $driver['driver_status'],
-                $driver['note'],
+                $operator['full_name'],
+                $operator['phone_number'],
+                $operator['operator_status'],
+                $operator['note'],
                 $id
             );
 
             if ($updateStatement->execute()) {
                 $updateStatement->close();
-                set_flash('success', 'Driver updated successfully.');
-                redirect('drivers.php');
+                set_flash('success', 'Operator updated successfully.');
+                redirect('operators.php');
             }
 
-            $errors[] = 'Unable to update the driver.';
+            $errors[] = 'Unable to update the operator. The operator name may already exist.';
             $updateStatement->close();
         }
     }
@@ -107,8 +107,8 @@ require __DIR__ . '/includes/messages.php';
 <?php endif; ?>
 
 <?php
-$formTitle = 'Edit Driver';
-$submitLabel = 'Update Driver';
-require __DIR__ . '/includes/driver-form.php';
+$formTitle = 'Edit Operator';
+$submitLabel = 'Update Operator';
+require __DIR__ . '/includes/operator-form.php';
 require __DIR__ . '/includes/footer.php';
 ?>

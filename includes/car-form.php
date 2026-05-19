@@ -29,7 +29,7 @@ $formTitle = $formTitle ?? 'Car Form';
             </div>
 
             <div class="col-md-6">
-                <label for="model_name" class="form-label">Model Name</label>
+                <label for="model_name" class="form-label">Model Year</label>
                 <input type="text" class="form-control" id="model_name" name="model_name" value="<?= e($car['model_name'] ?? '') ?>" required>
             </div>
 

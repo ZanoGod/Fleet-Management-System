@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/includes/bootstrap.php';
 
-$activePage = 'drivers';
-$pageTitle = 'Drivers';
-$pageSummary = 'View total drivers and maintain their availability for trip assignments.';
-$pageActions = '<a class="btn btn-accent" href="driver-create.php">Add Driver</a>';
+$activePage = 'operators';
+$pageTitle = 'Operators';
+$pageSummary = 'Manage the operator directory used when creating bookings.';
+$pageActions = '<a class="btn btn-accent" href="operator-create.php">Add Operator</a>';
 $flash = get_flash();
 
 $filters = [
@@ -15,12 +15,11 @@ $filters = [
     'status' => trim((string) ($_GET['status'] ?? '')),
 ];
 
-$drivers = [];
+$operators = [];
 $stats = [
     'total' => 0,
-    'available' => 0,
-    'on_trip' => 0,
-    'leave_count' => 0,
+    'active' => 0,
+    'inactive' => 0,
 ];
 
 if ($db instanceof mysqli) {
@@ -36,12 +35,12 @@ if ($db instanceof mysqli) {
     }
 
     if ($filters['status'] !== '') {
-        $where[] = 'driver_status = ?';
+        $where[] = 'operator_status = ?';
         $types .= 's';
         $params[] = $filters['status'];
     }
 
-    $sql = 'SELECT id, full_name, phone_number, driver_status, note FROM drivers';
+    $sql = 'SELECT id, full_name, phone_number, operator_status, note FROM operators';
 
     if ($where !== []) {
         $sql .= ' WHERE ' . implode(' AND ', $where);
@@ -60,7 +59,7 @@ if ($db instanceof mysqli) {
         $result = $statement->get_result();
 
         while ($row = $result->fetch_assoc()) {
-            $drivers[] = $row;
+            $operators[] = $row;
         }
 
         $statement->close();
@@ -69,10 +68,9 @@ if ($db instanceof mysqli) {
     $statsResult = $db->query(
         "SELECT
             COUNT(*) AS total,
-            SUM(driver_status = 'Available') AS available,
-            SUM(driver_status = 'On Trip') AS on_trip,
-            SUM(driver_status = 'Leave') AS leave_count
-         FROM drivers"
+            SUM(operator_status = 'Active') AS active,
+            SUM(operator_status = 'Inactive') AS inactive
+         FROM operators"
     );
 
     if ($statsResult instanceof mysqli_result) {
@@ -86,45 +84,40 @@ require __DIR__ . '/includes/messages.php';
 
 <section class="overview-grid">
     <div class="card-shell overview-card">
-        <span>Total Drivers</span>
+        <span>Total Operators</span>
         <strong><?= e((string) ($stats['total'] ?? 0)) ?></strong>
-        <small>All registered drivers</small>
+        <small>All operators in the directory</small>
     </div>
     <div class="card-shell overview-card">
-        <span>Available</span>
-        <strong><?= e((string) ($stats['available'] ?? 0)) ?></strong>
-        <small>Ready for booking</small>
+        <span>Active</span>
+        <strong><?= e((string) ($stats['active'] ?? 0)) ?></strong>
+        <small>Available for new bookings</small>
     </div>
     <div class="card-shell overview-card">
-        <span>On Trip</span>
-        <strong><?= e((string) ($stats['on_trip'] ?? 0)) ?></strong>
-        <small>Currently assigned</small>
-    </div>
-    <div class="card-shell overview-card">
-        <span>On Leave</span>
-        <strong><?= e((string) ($stats['leave_count'] ?? 0)) ?></strong>
-        <small>Temporarily unavailable</small>
+        <span>Inactive</span>
+        <strong><?= e((string) ($stats['inactive'] ?? 0)) ?></strong>
+        <small>Not shown for current operations</small>
     </div>
 </section>
 
 <section class="card-shell section-card mb-4">
     <div class="section-title">
         <div>
-            <h2>Search Drivers</h2>
-            <p>Filter by name, phone number, note, or status.</p>
+            <h2>Search Operators</h2>
+            <p>Filter by operator name, phone number, note, or status.</p>
         </div>
     </div>
 
     <form method="get" class="filter-grid">
         <div>
             <label for="search" class="form-label">Search</label>
-            <input type="text" class="form-control" id="search" name="search" value="<?= e($filters['search']) ?>" placeholder="Driver name, phone, note">
+            <input type="text" class="form-control" id="search" name="search" value="<?= e($filters['search']) ?>" placeholder="Operator name, phone, note">
         </div>
         <div>
             <label for="status" class="form-label">Status</label>
             <select class="form-select" id="status" name="status">
                 <option value="">All Statuses</option>
-                <?php foreach (driver_statuses() as $status): ?>
+                <?php foreach (operator_statuses() as $status): ?>
                     <option value="<?= e($status) ?>" <?= selected($filters['status'], $status) ?>><?= e($status) ?></option>
                 <?php endforeach; ?>
             </select>
@@ -138,8 +131,8 @@ require __DIR__ . '/includes/messages.php';
 <section class="card-shell section-card">
     <div class="section-title">
         <div>
-            <h2>Driver List</h2>
-            <p>Keep driver records ready for daily fleet operations.</p>
+            <h2>Operator List</h2>
+            <p>Use this page to keep booking operators ready for selection.</p>
         </div>
     </div>
 
@@ -147,7 +140,7 @@ require __DIR__ . '/includes/messages.php';
         <table class="table data-table">
             <thead>
                 <tr>
-                    <th>Driver Name</th>
+                    <th>Operator Name</th>
                     <th>Phone Number</th>
                     <th>Status</th>
                     <th>Note</th>
@@ -155,21 +148,21 @@ require __DIR__ . '/includes/messages.php';
                 </tr>
             </thead>
             <tbody>
-                <?php if ($drivers === []): ?>
+                <?php if ($operators === []): ?>
                     <tr>
-                        <td colspan="5" class="text-center py-5 text-muted-soft">No drivers found.</td>
+                        <td colspan="5" class="text-center py-5 text-muted-soft">No operators found.</td>
                     </tr>
                 <?php else: ?>
-                    <?php foreach ($drivers as $driver): ?>
+                    <?php foreach ($operators as $operator): ?>
                         <tr>
-                            <td class="fw-semibold"><?= e($driver['full_name']) ?></td>
-                            <td><?= e($driver['phone_number']) ?></td>
-                            <td><span class="resource-pill <?= e(driver_status_class($driver['driver_status'])) ?>"><?= e($driver['driver_status']) ?></span></td>
-                            <td class="note-cell"><?= e($driver['note'] ?: '-') ?></td>
+                            <td class="fw-semibold"><?= e($operator['full_name']) ?></td>
+                            <td><?= e($operator['phone_number'] ?: '-') ?></td>
+                            <td><span class="resource-pill <?= e(operator_status_class($operator['operator_status'])) ?>"><?= e($operator['operator_status']) ?></span></td>
+                            <td class="note-cell"><?= e($operator['note'] ?: '-') ?></td>
                             <td class="text-center">
                                 <div class="d-flex justify-content-center gap-2 flex-wrap">
-                                    <a class="btn btn-sm btn-shell" href="driver-edit.php?id=<?= e((string) $driver['id']) ?>">Edit</a>
-                                    <form method="post" action="driver-delete.php?id=<?= e((string) $driver['id']) ?>" onsubmit="return confirm('Delete this driver?');">
+                                    <a class="btn btn-sm btn-shell" href="operator-edit.php?id=<?= e((string) $operator['id']) ?>">Edit</a>
+                                    <form method="post" action="operator-delete.php?id=<?= e((string) $operator['id']) ?>" onsubmit="return confirm('Delete this operator?');">
                                         <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
                                     </form>
                                 </div>

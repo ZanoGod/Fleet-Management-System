@@ -59,8 +59,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
-    if ((int) $car['seat_capacity'] <= 0) {
+    if (filter_var($car['seat_capacity'], FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]) === false) {
         $errors[] = 'Seat capacity must be greater than zero.';
+    }
+
+    if (!in_allowed_values($car['availability_status'], car_statuses())) {
+        $errors[] = 'Please choose a valid car status.';
     }
 
     if ($errors === []) {

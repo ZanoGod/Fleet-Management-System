@@ -4,35 +4,35 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/includes/bootstrap.php';
 
-$activePage = 'drivers';
-$pageTitle = 'Add Driver';
-$pageSummary = 'Create a new driver master record.';
-$pageActions = '<a class="btn btn-shell" href="drivers.php">All Drivers</a>';
+$activePage = 'operators';
+$pageTitle = 'Add Operator';
+$pageSummary = 'Create a new operator master record.';
+$pageActions = '<a class="btn btn-shell" href="operators.php">All Operators</a>';
 $errors = [];
-$driver = [
+$operator = [
     'full_name' => '',
     'phone_number' => '',
-    'driver_status' => 'Available',
+    'operator_status' => 'Active',
     'note' => '',
 ];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $driver = [
+    $operator = [
         'full_name' => old($_POST, 'full_name'),
         'phone_number' => old($_POST, 'phone_number'),
-        'driver_status' => old($_POST, 'driver_status', 'Available'),
+        'operator_status' => old($_POST, 'operator_status', 'Active'),
         'note' => old($_POST, 'note'),
     ];
 
-    foreach (['full_name', 'phone_number', 'driver_status'] as $field) {
-        if ($driver[$field] === '') {
+    foreach (['full_name', 'operator_status'] as $field) {
+        if ($operator[$field] === '') {
             $errors[] = 'Please fill in all required fields.';
             break;
         }
     }
 
-    if (!in_allowed_values($driver['driver_status'], driver_statuses())) {
-        $errors[] = 'Please choose a valid driver status.';
+    if (!in_allowed_values($operator['operator_status'], operator_statuses())) {
+        $errors[] = 'Please choose a valid operator status.';
     }
 
     if ($db === null) {
@@ -41,9 +41,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($errors === []) {
         $statement = $db->prepare(
-            'INSERT INTO drivers
-            (full_name, phone_number, license_no, driver_status, note)
-            VALUES (?, ?, NULL, ?, ?)'
+            'INSERT INTO operators
+            (full_name, phone_number, operator_status, note)
+            VALUES (?, ?, ?, ?)'
         );
 
         if (!$statement instanceof mysqli_stmt) {
@@ -51,19 +51,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } else {
             $statement->bind_param(
                 'ssss',
-                $driver['full_name'],
-                $driver['phone_number'],
-                $driver['driver_status'],
-                $driver['note']
+                $operator['full_name'],
+                $operator['phone_number'],
+                $operator['operator_status'],
+                $operator['note']
             );
 
             if ($statement->execute()) {
                 $statement->close();
-                set_flash('success', 'Driver added successfully.');
-                redirect('drivers.php');
+                set_flash('success', 'Operator added successfully.');
+                redirect('operators.php');
             }
 
-            $errors[] = 'Unable to save the driver. Please try again.';
+            $errors[] = 'Unable to save the operator. The operator name may already exist.';
             $statement->close();
         }
     }
@@ -84,8 +84,8 @@ require __DIR__ . '/includes/messages.php';
 <?php endif; ?>
 
 <?php
-$formTitle = 'Add Driver';
-$submitLabel = 'Save Driver';
-require __DIR__ . '/includes/driver-form.php';
+$formTitle = 'Add Operator';
+$submitLabel = 'Save Operator';
+require __DIR__ . '/includes/operator-form.php';
 require __DIR__ . '/includes/footer.php';
 ?>

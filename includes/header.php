@@ -14,40 +14,43 @@ $navigationItems = app_navigation();
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= e($pageTitle) ?></title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
-    <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="stylesheet" href="<?= e(asset_url('assets/vendor/bootstrap/bootstrap.min.css')) ?>">
+    <link rel="stylesheet" href="<?= e(asset_url('assets/css/style.css')) ?>">
 </head>
 <body>
     <div class="sidebar-backdrop" data-sidebar-close></div>
     <div class="app-shell">
         <aside class="sidebar" id="appSidebar">
             <div class="sidebar-brand">
-                <div class="brand-mark">FM</div>
-                <div>
-                    <span class="sidebar-kicker">GSS</span>
-                    <h2>Fleet Management</h2>
+                <div class="sidebar-brand-main">
+                    <div class="brand-mark">GSS</div>
+                    <div class="sidebar-brand-copy">
+                        <span class="sidebar-kicker">GSS</span>
+                        <h2>Fleet Management</h2>
+                    </div>
                 </div>
+                <!-- Removed text, kept only icon -->
+                <button class="sidebar-desktop-toggle" type="button" data-sidebar-desktop-toggle aria-label="Toggle sidebar" aria-pressed="false">
+                    <span class="sidebar-desktop-toggle-icon" aria-hidden="true"></span>
+                </button>
             </div>
 
             <div class="sidebar-section-label">Navigation</div>
             <nav class="sidebar-nav">
                 <?php foreach ($navigationItems as $item): ?>
                     <a class="sidebar-link <?= e(nav_is_active($activePage, $item['key'])) ?>" href="<?= e($item['path']) ?>">
-                        <span class="sidebar-link-icon"><?= e($item['icon']) ?></span>
-                        <span>
+                        <span class="sidebar-link-icon"><?= $item['icon'] ?></span>
+                        <span class="sidebar-link-copy">
+                            <!-- Removed description -->
                             <strong><?= e($item['label']) ?></strong>
-                            <small><?= e($item['description']) ?></small>
+                        </span>
+                        <!-- Removed description from tooltip -->
+                        <span class="sidebar-link-tooltip" aria-hidden="true">
+                            <strong><?= e($item['label']) ?></strong>
                         </span>
                     </a>
                 <?php endforeach; ?>
             </nav>
-
-            <div class="sidebar-cta">
-                <span class="sidebar-section-label">Quick Action</span>
-                <h3>Need a new trip assignment?</h3>
-                <p>Create a booking and connect it with the right car and driver.</p>
-                <a class="btn btn-accent w-100" href="create.php">Add Booking</a>
-            </div>
         </aside>
 
         <div class="app-main">
@@ -57,6 +60,11 @@ $navigationItems = app_navigation();
                         <span></span>
                         <span></span>
                         <span></span>
+                    </button>
+
+                    <!-- Removed text, kept only icon -->
+                    <button class="sidebar-expand-toggle" type="button" data-sidebar-desktop-toggle aria-label="Toggle sidebar" aria-pressed="false">
+                        <span class="sidebar-expand-toggle-icon" aria-hidden="true"></span>
                     </button>
 
                     <div>
