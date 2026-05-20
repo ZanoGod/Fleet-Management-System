@@ -19,8 +19,9 @@ $drivers = [];
 $stats = [
     'total' => 0,
     'available' => 0,
-    'on_trip' => 0,
+    'assigned' => 0,
     'leave_count' => 0,
+    'inactive' => 0,
 ];
 
 if ($db instanceof mysqli) {
@@ -68,11 +69,12 @@ if ($db instanceof mysqli) {
 
     $statsResult = $db->query(
         "SELECT
-            COUNT(*) AS total,
-            SUM(driver_status = 'Available') AS available,
-            SUM(driver_status = 'On Trip') AS on_trip,
-            SUM(driver_status = 'Leave') AS leave_count
-         FROM drivers"
+        COUNT(*) AS total,
+        SUM(driver_status = 'Available') AS available,
+        SUM(driver_status = 'Assigned') AS assigned,
+        SUM(driver_status = 'Leave') AS leave_count,
+        SUM(driver_status = 'Inactive') AS inactive
+     FROM drivers"
     );
 
     if ($statsResult instanceof mysqli_result) {

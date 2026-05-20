@@ -118,7 +118,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $booking['operator_name'] = trim((string) ($operator['full_name'] ?? ''));
     }
 
-    if ($errors === []) {
+    if ($errors === [] && $db instanceof mysqli) {
         $statement = $db->prepare(
             'INSERT INTO bookings
             (guest_company_name, car_id, custom_car_name, driver_id, custom_driver_name, operator_id, operator_name, even_odd, start_date, end_date, status, remark)

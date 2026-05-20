@@ -40,31 +40,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if ($errors === []) {
-        $statement = $db->prepare(
-            'INSERT INTO operators
-            (full_name, phone_number, operator_status, note)
-            VALUES (?, ?, ?, ?)'
-        );
-
-        if (!$statement instanceof mysqli_stmt) {
-            $errors[] = 'Failed to prepare the database query.';
+        if ($db === null) {
+            $errors[] = 'Database is not connected yet. Please import the SQL file and check config/database.php.';
         } else {
-            $statement->bind_param(
-                'ssss',
-                $operator['full_name'],
-                $operator['phone_number'],
-                $operator['operator_status'],
-                $operator['note']
+            $statement = $db->prepare(
+                'INSERT INTO operators
+                (full_name, phone_number, operator_status, note)
+                VALUES (?, ?, ?, ?)'
             );
 
-            if ($statement->execute()) {
-                $statement->close();
-                set_flash('success', 'Operator added successfully.');
-                redirect('operators.php');
-            }
+            if (!$statement instanceof mysqli_stmt) {
+                $errors[] = 'Failed to prepare the database query.';
+            } else {
+                $statement->bind_param(
+                    'ssss',
+                    $operator['full_name'],
+                    $operator['phone_number'],
+                    $operator['operator_status'],
+                    $operator['note']
+                );
 
-            $errors[] = 'Unable to save the operator. The operator name may already exist.';
-            $statement->close();
+                if ($statement->execute()) {
+                    $statement->close();
+                    set_flash('success', 'Operator added successfully.');
+                    redirect('operators.php');
+                }
+
+                $errors[] = 'Unable to save the operator. The operator name may already exist.';
+                $statement->close();
+            }
         }
     }
 }

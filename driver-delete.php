@@ -28,16 +28,27 @@ if (!$statement instanceof mysqli_stmt) {
 }
 
 $statement->bind_param('i', $id);
-$success = $statement->execute();
-$affectedRows = $statement->affected_rows;
-$statement->close();
 
-if ($success && $affectedRows > 0) {
-    set_flash('success', 'Driver deleted successfully.');
-} elseif ($success) {
-    set_flash('danger', 'Driver could not be found.');
-} else {
-    set_flash('danger', 'This driver cannot be deleted because the driver is already used in a booking.');
+try {
+
+    $success = $statement->execute();
+    $affectedRows = $statement->affected_rows;
+
+    if ($success && $affectedRows > 0) {
+        set_flash('success', 'Driver deleted successfully.');
+    } else {
+        set_flash('danger', 'Driver could not be found.');
+    }
+
+} catch (mysqli_sql_exception $e) {
+
+    set_flash(
+        'danger',
+        'This driver cannot be deleted because the driver is already used in a booking.'
+    );
+
 }
+
+$statement->close();
 
 redirect('drivers.php');

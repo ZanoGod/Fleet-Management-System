@@ -23,14 +23,27 @@ function dashboard_default_state(): array
 function dashboard_fetch_summary(mysqli $db): array
 {
     $defaultSummary = dashboard_default_state()['summary'];
+
     $summaryResult = $db->query(
         "SELECT
             (SELECT COUNT(*) FROM bookings) AS total_bookings,
-            (SELECT COUNT(*) FROM bookings WHERE status IN ('Confirm', 'In Service') AND end_date >= CURDATE()) AS active_bookings,
+
+            (SELECT COUNT(*) 
+             FROM bookings 
+             WHERE status = 'Confirm'
+             AND end_date >= CURDATE()) AS active_bookings,
+
             (SELECT COUNT(*) FROM cars) AS total_cars,
-            (SELECT COUNT(*) FROM cars WHERE availability_status = 'Available') AS available_cars,
+
+            (SELECT COUNT(*) 
+             FROM cars 
+             WHERE availability_status = 'Available') AS available_cars,
+
             (SELECT COUNT(*) FROM drivers) AS total_drivers,
-            (SELECT COUNT(*) FROM drivers WHERE driver_status = 'Available') AS available_drivers"
+
+            (SELECT COUNT(*) 
+             FROM drivers 
+             WHERE driver_status = 'Available') AS available_drivers"
     );
 
     if (!$summaryResult instanceof mysqli_result) {

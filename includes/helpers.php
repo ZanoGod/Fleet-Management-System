@@ -100,7 +100,6 @@ function booking_statuses(): array
     return [
         'Pending',
         'Confirm',
-        'In Service',
         'Completed',
         'Cancelled',
     ];
@@ -125,13 +124,13 @@ function booking_even_odd_options(): array
     ];
 }
 
+
 function car_statuses(): array
 {
     return [
         'Available',
         'Assigned',
         'Maintenance',
-        'Inactive',
     ];
 }
 
@@ -147,11 +146,12 @@ function driver_statuses(): array
 {
     return [
         'Available',
-        'On Trip',
+        'Assigned',
         'Leave',
         'Inactive',
     ];
 }
+
 
 function selected(mixed $actual, mixed $expected): string
 {
@@ -204,7 +204,7 @@ function app_navigation(): array
         ],
         [
             'key' => 'cars',
-            'label' => 'Cars / Fleets',
+            'label' => 'Cars / Vehicles',
             'path' => 'cars.php',
             'description' => 'Vehicle master data',
             'icon' => 'CR',
