@@ -109,12 +109,12 @@ function status_badge_class(string $status): string
 {
     return match (strtolower($status)) {
         'confirm' => 'status-confirm',
-        'in service' => 'status-service',
         'completed' => 'status-completed',
         'cancelled' => 'status-cancelled',
         default => 'status-pending',
     };
 }
+
 
 function booking_even_odd_options(): array
 {

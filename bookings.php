@@ -22,7 +22,6 @@ $stats = [
     'total' => 0,
     'pending' => 0,
     'confirmed' => 0,
-    'in_service' => 0,
 ];
 
 if ($db instanceof mysqli) {
@@ -101,11 +100,11 @@ if ($db instanceof mysqli) {
 
     $statsResult = $db->query(
         "SELECT
-            COUNT(*) AS total,
-            SUM(status = 'Pending') AS pending,
-            SUM(status = 'Confirm') AS confirmed,
-            SUM(status = 'In Service') AS in_service
-         FROM bookings"
+        COUNT(*) AS total,
+        SUM(CASE WHEN status = 'Pending' THEN 1 ELSE 0 END) AS pending,
+        SUM(CASE WHEN status = 'Confirm' THEN 1 ELSE 0 END) AS confirmed,
+        SUM(CASE WHEN status = 'Completed' THEN 1 ELSE 0 END) AS completed
+     FROM bookings"
     );
 
     if ($statsResult instanceof mysqli_result) {
@@ -134,10 +133,14 @@ require __DIR__ . '/includes/messages.php';
         <small>Ready to operate</small>
     </div>
     <div class="card-shell overview-card">
-        <span>In Service</span>
-        <strong><?= e((string) ($stats['in_service'] ?? 0)) ?></strong>
-        <small>Trips running now</small>
+        <span>Completed</span>
+        <strong><?= e((string) ($stats['completed'] ?? 0)) ?></strong>
+        <small>Trips completed</small>
     </div>
+    <div class="card-shell overview-card">
+        <span>Cancelled</span>
+        <strong><?= e((string) (($stats['total'] ?? 0) - ($stats['pending'] ?? 0) - ($stats['confirmed'] ?? 0) - ($stats['completed'] ?? 0))) ?></strong>
+        <small>Trips cancelled</small>
 </section>
 
 <section class="card-shell section-card mb-4">
@@ -188,72 +191,72 @@ require __DIR__ . '/includes/messages.php';
     <div class="table-panel" id="bookingsTablePanel">
         <div class="table-responsive table-full-content">
             <table class="table data-table booking-list-table">
-            <thead>
-                <tr>
-                    <th>Guest / Company</th>
-                    <th>Car</th>
-                    <th>Operator</th>
-                    <th>E/O</th>
-                    <th>Dates</th>
-                    <th>Driver</th>
-                    <th>Status</th>
-                    <th>Remark</th>
-                    <th class="text-center">Action</th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php if ($bookings === []): ?>
+                <thead>
                     <tr>
-                        <td colspan="9" class="text-center py-5 text-muted-soft">No bookings found.</td>
+                        <th>Guest / Company</th>
+                        <th>Car</th>
+                        <th>Operator</th>
+                        <th>E/O</th>
+                        <th>Dates</th>
+                        <th>Driver</th>
+                        <th>Status</th>
+                        <th>Remark</th>
+                        <th class="text-center">Action</th>
                     </tr>
-                <?php else: ?>
-                    <?php foreach ($bookings as $booking): ?>
-                        <?php
-                        $guestName = $booking['guest_company_name'];
-                        $carDisplay = booking_car_display($booking);
-                        $operatorDisplay = booking_operator_display($booking);
-                        $driverDisplay = booking_driver_display($booking);
-                        $dateRange = format_compact_date_range($booking['start_date'], $booking['end_date']);
-                        $remarkText = $booking['remark'] ?: '-';
-                        ?>
+                </thead>
+                <tbody>
+                    <?php if ($bookings === []): ?>
                         <tr>
-                            <td title="<?= e($guestName) ?>">
-                                <span class="booking-row-text fw-semibold"><?= e($guestName) ?></span>
-                            </td>
-                            <td>
-                                <span class="table-pill car-pill" title="<?= e($carDisplay) ?>"><?= e($carDisplay) ?></span>
-                            </td>
-                            <td>
-                                <span class="table-pill operator-pill" title="<?= e($operatorDisplay) ?>"><?= e($operatorDisplay) ?></span>
-                            </td>
-                            <td title="<?= e($booking['even_odd'] ?: '-') ?>">
-                                <span class="booking-row-text"><?= e($booking['even_odd'] ?: '-') ?></span>
-                            </td>
-                            <td title="<?= e($dateRange) ?>">
-                                <span class="booking-date-range"><?= e($dateRange) ?></span>
-                            </td>
-                            <td>
-                                <span class="table-pill driver-pill" title="<?= e($driverDisplay) ?>"><?= e($driverDisplay) ?></span>
-                            </td>
-                            <td>
-                                <span class="status-pill <?= e(status_badge_class($booking['status'])) ?>" title="<?= e($booking['status']) ?>"><?= e($booking['status']) ?></span>
-                            </td>
-                            <td class="remark-cell" title="<?= e($remarkText) ?>">
-                                <span class="booking-row-text"><?= e($remarkText) ?></span>
-                            </td>
-                            <td class="text-center">
-                                <div class="table-actions">
-                                    <a class="btn btn-sm btn-shell" href="edit.php?id=<?= e((string) $booking['id']) ?>">Edit</a>
-                                    <form method="post" action="delete.php?id=<?= e((string) $booking['id']) ?>" onsubmit="return confirm('Delete this booking?');">
-                                        <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
-                                    </form>
-                                </div>
-                            </td>
+                            <td colspan="9" class="text-center py-5 text-muted-soft">No bookings found.</td>
                         </tr>
-                    <?php endforeach; ?>
-                <?php endif; ?>
-            </tbody>
-        </table>
+                    <?php else: ?>
+                        <?php foreach ($bookings as $booking): ?>
+                            <?php
+                            $guestName = $booking['guest_company_name'];
+                            $carDisplay = booking_car_display($booking);
+                            $operatorDisplay = booking_operator_display($booking);
+                            $driverDisplay = booking_driver_display($booking);
+                            $dateRange = format_compact_date_range($booking['start_date'], $booking['end_date']);
+                            $remarkText = $booking['remark'] ?: '-';
+                            ?>
+                            <tr>
+                                <td title="<?= e($guestName) ?>">
+                                    <span class="booking-row-text fw-semibold"><?= e($guestName) ?></span>
+                                </td>
+                                <td>
+                                    <span class="table-pill car-pill" title="<?= e($carDisplay) ?>"><?= e($carDisplay) ?></span>
+                                </td>
+                                <td>
+                                    <span class="table-pill operator-pill" title="<?= e($operatorDisplay) ?>"><?= e($operatorDisplay) ?></span>
+                                </td>
+                                <td title="<?= e($booking['even_odd'] ?: '-') ?>">
+                                    <span class="booking-row-text"><?= e($booking['even_odd'] ?: '-') ?></span>
+                                </td>
+                                <td title="<?= e($dateRange) ?>">
+                                    <span class="booking-date-range"><?= e($dateRange) ?></span>
+                                </td>
+                                <td>
+                                    <span class="table-pill driver-pill" title="<?= e($driverDisplay) ?>"><?= e($driverDisplay) ?></span>
+                                </td>
+                                <td>
+                                    <span class="status-pill <?= e(status_badge_class($booking['status'])) ?>" title="<?= e($booking['status']) ?>"><?= e($booking['status']) ?></span>
+                                </td>
+                                <td class="remark-cell" title="<?= e($remarkText) ?>">
+                                    <span class="booking-row-text"><?= e($remarkText) ?></span>
+                                </td>
+                                <td class="text-center">
+                                    <div class="table-actions">
+                                        <a class="btn btn-sm btn-shell" href="edit.php?id=<?= e((string) $booking['id']) ?>">Edit</a>
+                                        <form method="post" action="delete.php?id=<?= e((string) $booking['id']) ?>" onsubmit="return confirm('Delete this booking?');">
+                                            <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                </tbody>
+            </table>
         </div>
     </div>
 </section>
