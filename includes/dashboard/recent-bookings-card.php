@@ -36,14 +36,27 @@ $recentBookings = $recentBookings ?? [];
                                 <div class="fw-semibold"><?= e($booking['guest_company_name']) ?></div>
                                 <div class="soft-note"><?= e(booking_operator_display($booking)) ?></div>
                             </td>
+                            
                             <td>
-                                <span class="table-pill car-pill"><?= e(booking_car_display($booking)) ?></span>
-                                <?php if (trim((string) ($booking['custom_car_name'] ?? '')) === '' && trim((string) ($booking['plate_no'] ?? '')) !== ''): ?>
-                                    <div class="soft-note mt-2"><?= e($booking['plate_no']) ?></div>
-                                <?php endif; ?>
+                                <div class="d-flex flex-column align-items-start">
+                                    <?php if (trim((string) ($booking['custom_car_name'] ?? '')) !== ''): ?>
+                                        <span class="table-pill car-pill"><?= e($booking['custom_car_name']) ?></span>
+                                    <?php else: ?>
+                                        <span class="table-pill car-pill"><?= e($booking['car_type'] ?? '-') ?></span>
+                                        <?php if (trim((string) ($booking['plate_no'] ?? '')) !== ''): ?>
+                                            <span class="soft-note mt-1" style="padding-left: 10px; font-size: 0.85em;">
+                                                <?= e($booking['plate_no']) ?>
+                                            </span>
+                                        <?php endif; ?>
+                                    <?php endif; ?>
+                                </div>
                             </td>
+
                             <td><span class="table-pill driver-pill"><?= e(booking_driver_display($booking)) ?></span></td>
-                            <td><?= e(format_display_date($booking['start_date'])) ?><br><span class="soft-note"><?= e(format_display_date($booking['end_date'])) ?></span></td>
+                            <td>
+                                <?= e(format_display_date($booking['start_date'])) ?><br>
+                                <span class="soft-note"><?= e(format_display_date($booking['end_date'])) ?></span>
+                            </td>
                             <td><span class="status-pill <?= e(status_badge_class($booking['status'])) ?>"><?= e($booking['status']) ?></span></td>
                         </tr>
                     <?php endforeach; ?>

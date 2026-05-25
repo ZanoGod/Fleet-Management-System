@@ -291,7 +291,6 @@ a {
     border-bottom: 0;
     padding: 1rem 0.9rem;
 }
-
 .data-table tbody td {
     padding: 1rem 0.9rem;
     vertical-align: middle;
@@ -308,9 +307,9 @@ a {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    padding: 0.3rem 0.85rem;
+    padding: 0.4rem 1rem; 
     border-radius: 999px;
-    font-size: 0.88rem;
+    font-size: 0.98rem; 
     font-weight: 700;
 }
 
@@ -564,14 +563,18 @@ a {
 
 .btn-shell {
     background: rgba(255, 255, 255, 0.8);
-    border: 1px solid var(--line);
+    border: 0.1px groove var(--cocoa-soft); 
     color: var(--cocoa);
+    transition: all 0.2s ease; 
 }
 
 .btn-shell:hover,
 .btn-shell:focus {
-    background: var(--paper-strong);
-    color: var(--cocoa);
+    background: var(--cocoa);
+    border-color: var(--cocoa);
+    color: var(--cream);
+    box-shadow: 0 4px 12px rgba(79, 32, 13, 0.15); /* Nice hover glow/shadow */
+    transform: translateY(-1px); /* Slight lift effect */
 }
 
 .btn-outline-danger {
@@ -690,9 +693,22 @@ a {
     min-width: 220px;
 }
 
+/* --- NEW: Larger text specifically for the Dashboard Table --- */
+.dashboard-table thead th {
+    font-size: 1.05rem;
+}
+
+.dashboard-table tbody td {
+    font-size: 1.05rem; 
+}
+
+.dashboard-table .fw-semibold {
+    font-size: 1.15rem; /* Makes the Guest Name stand out more */
+}
+
 .soft-note {
     color: var(--muted);
-    font-size: 0.94rem;
+    font-size: 1rem;
 }
 
 @media (min-width: 992px) {

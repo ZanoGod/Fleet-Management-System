@@ -6,22 +6,16 @@ require_once __DIR__ . '/includes/bootstrap.php';
 
 $activePage = 'reports';
 $pageTitle = 'Reports';
-$pageSummary = 'Filter booking activity by weekly, monthly, or custom date ranges and review operations at a glance.';
+$pageSummary = 'Filter booking activity by custom date ranges and review operations at a glance.';
 $pageActions = '<a class="btn btn-shell" href="bookings.php">Open Bookings</a>';
 $flash = get_flash();
 
-$reportRangeTypes = ['monthly', 'weekly', 'manual'];
+// Simplified filters array
 $filters = [
     'search' => trim((string) ($_GET['search'] ?? '')),
-    'range_type' => trim((string) ($_GET['range_type'] ?? 'monthly')),
-    'calendar_date' => trim((string) ($_GET['calendar_date'] ?? date('Y-m-d'))),
     'start_date' => trim((string) ($_GET['start_date'] ?? date('Y-m-01'))),
     'end_date' => trim((string) ($_GET['end_date'] ?? date('Y-m-t'))),
 ];
-
-if (!in_allowed_values($filters['range_type'], $reportRangeTypes)) {
-    $filters['range_type'] = 'monthly';
-}
 
 $bookingStatusCounts = array_fill_keys(booking_statuses(), 0);
 $carStatusCounts = array_fill_keys(car_statuses(), 0);
@@ -38,41 +32,24 @@ $rangeLabel = 'All booking dates';
 $dateFrom = null;
 $dateTo = null;
 
+// Straightforward date processing
 try {
-    if ($filters['range_type'] === 'manual') {
-        if ($filters['start_date'] === '' || $filters['end_date'] === '') {
-            $errors[] = 'Please choose both start and end dates for a manual report.';
-        } else {
-            $startDate = new DateTimeImmutable($filters['start_date']);
-            $endDate = new DateTimeImmutable($filters['end_date']);
+    if ($filters['start_date'] === '' || $filters['end_date'] === '') {
+        $errors[] = 'Please choose both start and end dates for the report.';
+    } else {
+        $startDate = new DateTimeImmutable($filters['start_date']);
+        $endDate = new DateTimeImmutable($filters['end_date']);
 
-            if ($endDate < $startDate) {
-                $errors[] = 'Manual end date cannot be earlier than the start date.';
-            } else {
-                $dateFrom = $startDate->format('Y-m-d');
-                $dateTo = $endDate->format('Y-m-d');
-                $rangeLabel = $startDate->format('d M Y') . ' to ' . $endDate->format('d M Y');
-            }
-        }
-    } elseif ($filters['calendar_date'] !== '') {
-        $calendarDate = new DateTimeImmutable($filters['calendar_date']);
-
-        if ($filters['range_type'] === 'weekly') {
-            $weekStart = $calendarDate->modify('monday this week');
-            $weekEnd = $weekStart->modify('+6 days');
-            $dateFrom = $weekStart->format('Y-m-d');
-            $dateTo = $weekEnd->format('Y-m-d');
-            $rangeLabel = $weekStart->format('d M Y') . ' to ' . $weekEnd->format('d M Y');
+        if ($endDate < $startDate) {
+            $errors[] = 'End date cannot be earlier than the start date.';
         } else {
-            $monthStart = $calendarDate->modify('first day of this month');
-            $monthEnd = $calendarDate->modify('last day of this month');
-            $dateFrom = $monthStart->format('Y-m-d');
-            $dateTo = $monthEnd->format('Y-m-d');
-            $rangeLabel = $monthStart->format('F Y');
+            $dateFrom = $startDate->format('Y-m-d');
+            $dateTo = $endDate->format('Y-m-d');
+            $rangeLabel = $startDate->format('d M Y') . ' to ' . $endDate->format('d M Y');
         }
     }
 } catch (Throwable $throwable) {
-    $errors[] = 'Please choose a valid report date.';
+    $errors[] = 'Please choose a valid report date format.';
 }
 
 if ($db instanceof mysqli) {
@@ -196,37 +173,25 @@ require __DIR__ . '/includes/messages.php';
     <div class="section-title">
         <div>
             <h2>Report Filters</h2>
-            <p>Use monthly, weekly, or manual dates with search to narrow the booking report.</p>
+            <p>Select a date range to filter the booking report.</p>
         </div>
     </div>
 
-    <form method="get" class="filter-grid reports-filter-grid">
+    <form method="get" class="filter-grid" style="grid-template-columns: 2fr 1fr 1fr auto;">
         <div>
             <label for="search" class="form-label">Search</label>
             <input type="text" class="form-control" id="search" name="search" value="<?= e($filters['search']) ?>" placeholder="Guest, car, operator, driver, remark">
         </div>
         <div>
-            <label for="range_type" class="form-label">Range Type</label>
-            <select class="form-select" id="range_type" name="range_type">
-                <option value="monthly" <?= selected($filters['range_type'], 'monthly') ?>>Monthly</option>
-                <option value="weekly" <?= selected($filters['range_type'], 'weekly') ?>>Weekly</option>
-                <option value="manual" <?= selected($filters['range_type'], 'manual') ?>>Manual</option>
-            </select>
-        </div>
-        <div>
-            <label for="calendar_date" class="form-label">Calendar Date</label>
-            <input type="date" class="form-control" id="calendar_date" name="calendar_date" value="<?= e($filters['calendar_date']) ?>">
-        </div>
-        <div>
-            <label for="start_date" class="form-label">Manual Start</label>
+            <label for="start_date" class="form-label">Start Date</label>
             <input type="date" class="form-control" id="start_date" name="start_date" value="<?= e($filters['start_date']) ?>">
         </div>
         <div>
-            <label for="end_date" class="form-label">Manual End</label>
+            <label for="end_date" class="form-label">End Date</label>
             <input type="date" class="form-control" id="end_date" name="end_date" value="<?= e($filters['end_date']) ?>">
         </div>
-        <div class="d-grid align-self-end gap-2">
-            <button type="submit" class="btn btn-shell">Apply</button>
+        <div class="d-grid align-self-end gap-2 d-md-flex">
+            <button type="submit" class="btn btn-shell flex-grow-1">Apply</button>
             <a class="btn btn-outline-secondary" href="reports.php">Reset</a>
         </div>
     </form>
@@ -268,38 +233,76 @@ require __DIR__ . '/includes/messages.php';
         </div>
     </div>
 
-    <div class="table-responsive table-full-content">
-        <table class="table data-table table-readable">
+    <div class="table-full-content">
+        <table class="table data-table align-middle" style="width: 100%; white-space: normal;">
             <thead>
                 <tr>
-                    <th>Guest / Company</th>
-                    <th>Car</th>
-                    <th>Operator</th>
-                    <th>Driver</th>
-                    <th>Even / Odd</th>
-                    <th>Start Date</th>
-                    <th>End Date</th>
-                    <th>Status</th>
-                    <th>Remark</th>
+                    <th style="width: 15%;">Guest / Company</th>
+                    <th style="width: 15%;">Car</th>
+                    <th style="width: 10%;">Operator</th>
+                    <th style="width: 15%;">Driver</th>
+                    <th style="width: 5%;">E/O</th>
+                    <th style="width: 10%;">Dates</th>
+                    <th style="width: 10%;">Status</th>
+                    <th style="width: 20%;">Remark</th>
                 </tr>
             </thead>
             <tbody>
                 <?php if ($reportBookings === []): ?>
                     <tr>
-                        <td colspan="9" class="text-center py-5 text-muted-soft">No bookings found for the selected report filters.</td>
+                        <td colspan="8" class="text-center py-5 text-muted-soft">No bookings found for the selected report filters.</td>
                     </tr>
                 <?php else: ?>
                     <?php foreach ($reportBookings as $booking): ?>
                         <tr>
-                            <td class="fw-semibold"><?= e($booking['guest_company_name']) ?></td>
-                            <td><span class="table-pill car-pill"><?= e(booking_car_display($booking)) ?></span></td>
-                            <td><span class="table-pill operator-pill"><?= e(booking_operator_display($booking)) ?></span></td>
-                            <td><span class="table-pill driver-pill"><?= e(booking_driver_display($booking)) ?></span></td>
-                            <td><?= e($booking['even_odd'] ?: '-') ?></td>
-                            <td><?= e(format_display_date($booking['start_date'])) ?></td>
-                            <td><?= e(format_display_date($booking['end_date'])) ?></td>
-                            <td><span class="status-pill <?= e(status_badge_class($booking['status'])) ?>"><?= e($booking['status']) ?></span></td>
-                            <td class="remark-cell"><?= e($booking['remark'] ?: '-') ?></td>
+                            <td>
+                                <div class="fw-semibold text-wrap" style="line-height: 1.3; font-size: 1.05rem;">
+                                    <?= e($booking['guest_company_name']) ?>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="d-flex flex-column align-items-start">
+                                    <?php if (trim((string) ($booking['custom_car_name'] ?? '')) !== ''): ?>
+                                        <span class="table-pill car-pill text-wrap text-start"><?= e($booking['custom_car_name']) ?></span>
+                                    <?php else: ?>
+                                        <span class="table-pill car-pill text-wrap text-start"><?= e($booking['car_type'] ?? '-') ?></span>
+                                        <?php if (trim((string) ($booking['plate_no'] ?? '')) !== ''): ?>
+                                            <span class="soft-note mt-1" style="padding-left: 10px; font-size: 0.85em;">
+                                                <?= e($booking['plate_no']) ?>
+                                            </span>
+                                        <?php endif; ?>
+                                    <?php endif; ?>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="table-pill operator-pill text-wrap text-start" style="font-size: 0.85em;">
+                                    <?= e(booking_operator_display($booking)) ?>
+                                </span>
+                            </td>
+                            <td>
+                                <span class="table-pill driver-pill text-wrap text-start" style="font-size: 0.9em; line-height: 1.2;">
+                                    <?= e(booking_driver_display($booking)) ?>
+                                </span>
+                            </td>
+                            <td>
+                                <span style="color: var(--muted); font-size: 0.9em;"><?= e($booking['even_odd'] ?: '-') ?></span>
+                            </td>
+                            <td>
+                                <div style="font-weight: 700; color: var(--cocoa); font-size: 0.95em; line-height: 1.2;">
+                                    <?= e(format_display_date($booking['start_date'])) ?>
+                                </div>
+                                <div class="soft-note" style="font-size: 0.85em; margin-top: 2px;">
+                                    <?= e(format_display_date($booking['end_date'])) ?>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="status-pill <?= e(status_badge_class($booking['status'])) ?>"><?= e($booking['status']) ?></span>
+                            </td>
+                            <td>
+                                <div class="text-wrap text-muted" style="font-size: 0.85em; line-height: 1.4;">
+                                    <?= e($booking['remark'] ?: '-') ?>
+                                </div>
+                            </td>
                         </tr>
                     <?php endforeach; ?>
                 <?php endif; ?>

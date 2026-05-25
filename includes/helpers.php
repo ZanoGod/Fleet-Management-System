@@ -193,42 +193,48 @@ function app_navigation(): array
             'label' => 'Dashboard',
             'path' => 'index.php',
             'description' => 'Overview and quick stats',
-            'icon' => 'DB',
+            // 'icon' => 'DB',
+            'icon' => '<i class="bi bi-grid-1x2-fill"></i>',
         ],
         [
             'key' => 'bookings',
             'label' => 'Bookings',
             'path' => 'bookings.php',
             'description' => 'Trip assignments',
-            'icon' => 'BK',
+           // 'icon' => 'BK',
+            'icon' => '<i class="bi bi-calendar-check-fill"></i>',
         ],
         [
             'key' => 'cars',
             'label' => 'Cars / Vehicles',
             'path' => 'cars.php',
             'description' => 'Vehicle master data',
-            'icon' => 'CR',
+          //  'icon' => 'CR',
+            'icon' => '<i class="bi bi-car-front-fill"></i>',
         ],
         [
             'key' => 'drivers',
             'label' => 'Drivers',
             'path' => 'drivers.php',
             'description' => 'Driver directory',
-            'icon' => 'DR',
+           // 'icon' => 'DR',
+           'icon' => '<i class="bi bi-person-vcard-fill"></i>',
         ],
         [
             'key' => 'operators',
             'label' => 'Operators',
             'path' => 'operators.php',
             'description' => 'Operator directory',
-            'icon' => 'OP',
+           // 'icon' => 'OP',
+            'icon' => '<i class="bi bi-headset"></i>',
         ],
         [
             'key' => 'reports',
             'label' => 'Reports',
             'path' => 'reports.php',
             'description' => 'Status and planning',
-            'icon' => 'RP',
+            //'icon' => 'RP',
+            'icon' => '<i class="bi bi-bar-chart-fill"></i>',
         ],
     ];
 }
@@ -266,14 +272,20 @@ function operator_status_class(string $status): string
     };
 }
 
-function fetch_cars_for_select(mysqli $db): array
+
+function fetch_cars_for_select(mysqli $db, bool $availableOnly = false): array
 {
     $cars = [];
-    $result = $db->query(
-        'SELECT id, car_type, plate_no, model_name, availability_status
-         FROM cars
-         ORDER BY car_type ASC, plate_no ASC'
-    );
+    $sql = 'SELECT id, car_type, plate_no, model_name, availability_status FROM cars';
+    
+    // If we only want available cars, append the WHERE clause
+    if ($availableOnly) {
+        $sql .= " WHERE availability_status = 'Available'";
+    }
+    
+    $sql .= ' ORDER BY car_type ASC, plate_no ASC';
+    
+    $result = $db->query($sql);
 
     if ($result instanceof mysqli_result) {
         while ($row = $result->fetch_assoc()) {

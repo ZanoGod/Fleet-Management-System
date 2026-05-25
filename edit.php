@@ -6,7 +6,7 @@ require_once __DIR__ . '/includes/bootstrap.php';
 
 $activePage = 'bookings';
 $pageTitle = 'Edit Booking';
-$pageSummary = 'Update trip assignment details with saved operators and flexible car and driver inputs.';
+$pageSummary = 'Update trip assignment details. The system will check for overlapping dates.';
 $pageActions = '<a class="btn btn-shell" href="bookings.php">All Bookings</a>';
 $errors = [];
 $cars = [];
@@ -14,60 +14,44 @@ $drivers = [];
 $operators = [];
 $id = (int) ($_GET['id'] ?? 0);
 
-if ($id <= 0) {
-    set_flash('danger', 'Invalid booking ID.');
+if ($id <= 0 || $db === null) {
     redirect('bookings.php');
 }
 
-if ($db === null) {
-    require __DIR__ . '/includes/header.php';
-    require __DIR__ . '/includes/messages.php';
-    require __DIR__ . '/includes/footer.php';
-    return;
-}
-
-$cars = fetch_cars_for_select($db);
+$cars = fetch_cars_for_select($db); 
 $drivers = fetch_drivers_for_select($db);
 $operators = fetch_operators_for_select($db);
 
 $statement = $db->prepare('SELECT * FROM bookings WHERE id = ? LIMIT 1');
+if ($statement) {
+    $statement->bind_param('i', $id);
+    $statement->execute();
+    $oldBooking = $statement->get_result()->fetch_assoc();
+    $statement->close();
+}
 
-if (!$statement instanceof mysqli_stmt) {
-    set_flash('danger', 'Failed to load the booking record.');
+if (empty($oldBooking)) {
     redirect('bookings.php');
 }
 
-$statement->bind_param('i', $id);
-$statement->execute();
-$result = $statement->get_result();
-$booking = $result->fetch_assoc();
-$statement->close();
-
-if ($booking === null) {
-    set_flash('danger', 'Booking record not found.');
-    redirect('bookings.php');
-}
+$booking = $oldBooking; 
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $booking = [
         'id' => $id,
         'guest_company_name' => old($_POST, 'guest_company_name'),
-        'car_value' => old($_POST, 'car_value'),
-        'car_id' => old($_POST, 'car_id'),
-        'custom_car_name' => '',
-        'driver_value' => old($_POST, 'driver_value'),
-        'driver_id' => old($_POST, 'driver_id'),
-        'custom_driver_name' => '',
-        'operator_id' => old($_POST, 'operator_id'),
-        'operator_name' => old($_POST, 'operator_name'),
-        'even_odd' => old($_POST, 'even_odd'),
-        'start_date' => old($_POST, 'start_date'),
-        'end_date' => old($_POST, 'end_date'),
-        'status' => old($_POST, 'status', 'Pending'),
-        'remark' => old($_POST, 'remark'),
+        'car_id'             => old($_POST, 'car_id'),
+        'driver_id'          => old($_POST, 'driver_id'),
+        'operator_id'        => old($_POST, 'operator_id'),
+        'operator_name'      => '',
+        'even_odd'           => old($_POST, 'even_odd'),
+        'start_date'         => old($_POST, 'start_date'),
+        'end_date'           => old($_POST, 'end_date'),
+        'status'             => old($_POST, 'status', 'Pending'),
+        'remark'             => old($_POST, 'remark'),
     ];
 
-    foreach (['guest_company_name', 'operator_id', 'start_date', 'end_date', 'status'] as $field) {
+    foreach (['guest_company_name', 'car_id', 'driver_id', 'operator_id', 'start_date', 'end_date', 'status'] as $field) {
         if ($booking[$field] === '') {
             $errors[] = 'Please fill in all required fields.';
             break;
@@ -78,49 +62,51 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $errors[] = 'End date cannot be earlier than start date.';
     }
 
-    if (!in_allowed_values($booking['status'], booking_statuses())) {
-        $errors[] = 'Please choose a valid booking status.';
-    }
+    $finalCarId = $booking['car_id'] !== '' ? (int) $booking['car_id'] : null;
+    $finalDriverId = $booking['driver_id'] !== '' ? (int) $booking['driver_id'] : null;
 
-    if ($booking['even_odd'] !== '' && !in_allowed_values($booking['even_odd'], booking_even_odd_options())) {
-        $errors[] = 'Please choose a valid Even / Odd value.';
-    }
-
-    $carId = null;
-    $carValue = trim($booking['car_value']);
-
-    if ($booking['car_id'] !== '') {
-        $carId = (int) $booking['car_id'];
-
-        if (!row_id_exists($cars, $carId)) {
-            $errors[] = 'Please choose a valid car.';
+    // ==========================================
+    // DATE OVERLAP CHECKER (EDIT MODE)
+    // ==========================================
+    if ($errors === [] && in_array($booking['status'], ['Pending', 'Confirm'])) {
+        
+        // 1. Check Car Overlap (IGNORE CURRENT BOOKING ID)
+        if ($finalCarId !== null) {
+            $carCheck = $db->prepare(
+                "SELECT start_date, end_date FROM bookings 
+                 WHERE car_id = ? AND id != ?
+                 AND status IN ('Pending', 'Confirm') 
+                 AND start_date <= ? AND end_date >= ?"
+            );
+            $carCheck->bind_param('iiss', $finalCarId, $id, $booking['end_date'], $booking['start_date']);
+            $carCheck->execute();
+            $carRes = $carCheck->get_result();
+            if ($row = $carRes->fetch_assoc()) {
+                $errors[] = "This Car is already booked from " . format_display_date($row['start_date']) . " to " . format_display_date($row['end_date']) . ".";
+            }
+            $carCheck->close();
         }
-    } elseif ($carValue !== '') {
-        $booking['custom_car_name'] = $carValue;
-    } else {
-        $errors[] = 'Please choose or type a car.';
-    }
 
-    $driverId = null;
-    $driverValue = trim($booking['driver_value']);
-
-    if ($booking['driver_id'] !== '') {
-        $driverId = (int) $booking['driver_id'];
-
-        if (!row_id_exists($drivers, $driverId)) {
-            $errors[] = 'Please choose a valid driver.';
+        // 2. Check Driver Overlap (IGNORE CURRENT BOOKING ID)
+        if ($finalDriverId !== null) {
+            $drvCheck = $db->prepare(
+                "SELECT start_date, end_date FROM bookings 
+                 WHERE driver_id = ? AND id != ?
+                 AND status IN ('Pending', 'Confirm') 
+                 AND start_date <= ? AND end_date >= ?"
+            );
+            $drvCheck->bind_param('iiss', $finalDriverId, $id, $booking['end_date'], $booking['start_date']);
+            $drvCheck->execute();
+            $drvRes = $drvCheck->get_result();
+            if ($row = $drvRes->fetch_assoc()) {
+                $errors[] = "This Driver is already booked from " . format_display_date($row['start_date']) . " to " . format_display_date($row['end_date']) . ".";
+            }
+            $drvCheck->close();
         }
-    } elseif ($driverValue !== '') {
-        $booking['custom_driver_name'] = $driverValue;
-    } else {
-        $errors[] = 'Please choose or type a driver.';
     }
 
     $operator = find_row_by_id($operators, (int) $booking['operator_id']);
-
-    if ($operator === null) {
-        $errors[] = 'Please choose a valid operator.';
-    } else {
+    if ($operator !== null) {
         $booking['operator_name'] = trim((string) ($operator['full_name'] ?? ''));
     }
 
@@ -131,24 +117,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
              WHERE id = ?'
         );
 
-        if (!$updateStatement instanceof mysqli_stmt) {
-            $errors[] = 'Failed to prepare the update query.';
-        } else {
+        if ($updateStatement) {
+            $emptyStr = '';
             $updateStatement->bind_param(
                 'sisisissssssi',
-                $booking['guest_company_name'],
-                $carId,
-                $booking['custom_car_name'],
-                $driverId,
-                $booking['custom_driver_name'],
-                $booking['operator_id'],
-                $booking['operator_name'],
-                $booking['even_odd'],
-                $booking['start_date'],
-                $booking['end_date'],
-                $booking['status'],
-                $booking['remark'],
-                $id
+                $booking['guest_company_name'], $finalCarId, $emptyStr, $finalDriverId, $emptyStr,
+                $booking['operator_id'], $booking['operator_name'], $booking['even_odd'],
+                $booking['start_date'], $booking['end_date'], $booking['status'], $booking['remark'], $id
             );
 
             if ($updateStatement->execute()) {
@@ -156,7 +131,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 set_flash('success', 'Booking updated successfully.');
                 redirect('bookings.php');
             }
-
             $errors[] = 'Unable to update the booking.';
             $updateStatement->close();
         }

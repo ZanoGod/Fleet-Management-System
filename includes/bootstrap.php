@@ -14,6 +14,18 @@ if (is_dir($sessionPath) && is_writable($sessionPath)) {
 
 session_start();
 
+// ==========================================
+// NEW: SYSTEM SECURITY & AUTHENTICATION
+// ==========================================
+$currentPage = basename($_SERVER['PHP_SELF']);
+
+// If they are not logged in, and they are NOT on the login page, kick them out to login.php
+if (empty($_SESSION['admin_logged_in']) && $currentPage !== 'login.php') {
+    header('Location: login.php');
+    exit;
+}
+// ==========================================
+
 require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/helpers.php';
 
@@ -196,6 +208,8 @@ function ensure_schema(mysqli $db): void
     );
 }
 
+// Only connect to DB if we are NOT on the login page, OR if we are doing something else
+// (It's safe to connect anyway, but we check schema to be sure)
 try {
     $db = Database::connect();
     $requiredTables = ['bookings', 'cars', 'drivers'];

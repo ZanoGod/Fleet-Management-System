@@ -76,7 +76,7 @@ function dashboard_fetch_recent_bookings(mysqli $db, int $limit = 6): array
          LEFT JOIN cars AS c ON c.id = b.car_id
          LEFT JOIN drivers AS d ON d.id = b.driver_id
          LEFT JOIN operators AS o ON o.id = b.operator_id
-         ORDER BY b.start_date DESC, b.id DESC
+         ORDER BY b.id DESC
          LIMIT {$safeLimit}"
     );
 

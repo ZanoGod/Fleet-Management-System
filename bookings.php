@@ -183,25 +183,25 @@ require __DIR__ . '/includes/messages.php';
     <div class="section-title">
         <div>
             <h2>Booking List</h2>
-            <p>Each booking stays on a clean single line for faster scanning, with fullscreen available when you need more space.</p>
+            <p>Each booking wraps neatly to fit your screen without horizontal scrolling.</p>
         </div>
         <button type="button" class="btn btn-shell btn-sm" data-fullscreen-target="bookingsTablePanel">Fullscreen Table</button>
     </div>
 
     <div class="table-panel" id="bookingsTablePanel">
-        <div class="table-responsive table-full-content">
-            <table class="table data-table booking-list-table">
+        <div class="table-full-content">
+            <table class="table data-table align-middle" style="width: 100%; white-space: normal;">
                 <thead>
                     <tr>
-                        <th>Guest / Company</th>
-                        <th>Car</th>
-                        <th>Operator</th>
-                        <th>E/O</th>
-                        <th>Dates</th>
-                        <th>Driver</th>
-                        <th>Status</th>
-                        <th>Remark</th>
-                        <th class="text-center">Action</th>
+                        <th style="width: 15%;">Guest / Company</th>
+                        <th style="width: 15%;">Car</th>
+                        <th style="width: 10%;">Operator</th>
+                        <th style="width: 5%;">E/O</th>
+                        <th style="width: 10%;">Dates</th>
+                        <th style="width: 15%;">Driver</th>
+                        <th style="width: 10%;">Status</th>
+                        <th style="width: 12%;">Remark</th>
+                        <th style="width: 8%;" class="text-center">Action</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -213,42 +213,70 @@ require __DIR__ . '/includes/messages.php';
                         <?php foreach ($bookings as $booking): ?>
                             <?php
                             $guestName = $booking['guest_company_name'];
-                            $carDisplay = booking_car_display($booking);
                             $operatorDisplay = booking_operator_display($booking);
                             $driverDisplay = booking_driver_display($booking);
-                            $dateRange = format_compact_date_range($booking['start_date'], $booking['end_date']);
                             $remarkText = $booking['remark'] ?: '-';
                             ?>
                             <tr>
-                                <td title="<?= e($guestName) ?>">
-                                    <span class="booking-row-text fw-semibold"><?= e($guestName) ?></span>
-                                </td>
                                 <td>
-                                    <span class="table-pill car-pill" title="<?= e($carDisplay) ?>"><?= e($carDisplay) ?></span>
+                                    <div class="fw-semibold text-wrap" style="line-height: 1.3; font-size: 1.05rem;">
+                                        <?= e($guestName) ?>
+                                    </div>
                                 </td>
+                                
                                 <td>
-                                    <span class="table-pill operator-pill" title="<?= e($operatorDisplay) ?>"><?= e($operatorDisplay) ?></span>
+                                    <div class="d-flex flex-column align-items-start">
+                                        <?php if (trim((string) ($booking['custom_car_name'] ?? '')) !== ''): ?>
+                                            <span class="table-pill car-pill text-wrap text-start"><?= e($booking['custom_car_name']) ?></span>
+                                        <?php else: ?>
+                                            <span class="table-pill car-pill text-wrap text-start"><?= e($booking['car_type'] ?? '-') ?></span>
+                                            <?php if (trim((string) ($booking['plate_no'] ?? '')) !== ''): ?>
+                                                <span class="soft-note mt-1" style="padding-left: 10px; font-size: 0.85em;">
+                                                    <?= e($booking['plate_no']) ?>
+                                                </span>
+                                            <?php endif; ?>
+                                        <?php endif; ?>
+                                    </div>
                                 </td>
-                                <td title="<?= e($booking['even_odd'] ?: '-') ?>">
-                                    <span class="booking-row-text"><?= e($booking['even_odd'] ?: '-') ?></span>
-                                </td>
-                                <td title="<?= e($dateRange) ?>">
-                                    <span class="booking-date-range"><?= e($dateRange) ?></span>
-                                </td>
+                                
                                 <td>
-                                    <span class="table-pill driver-pill" title="<?= e($driverDisplay) ?>"><?= e($driverDisplay) ?></span>
+                                    <span class="table-pill operator-pill text-wrap text-start" style="font-size: 0.85em;"><?= e($operatorDisplay) ?></span>
                                 </td>
+                                
                                 <td>
-                                    <span class="status-pill <?= e(status_badge_class($booking['status'])) ?>" title="<?= e($booking['status']) ?>"><?= e($booking['status']) ?></span>
+                                    <span style="color: var(--muted); font-size: 0.9em;"><?= e($booking['even_odd'] ?: '-') ?></span>
                                 </td>
-                                <td class="remark-cell" title="<?= e($remarkText) ?>">
-                                    <span class="booking-row-text"><?= e($remarkText) ?></span>
+                                
+                                <td>
+                                    <div style="font-weight: 700; color: var(--cocoa); font-size: 0.95em; line-height: 1.2;">
+                                        <?= e(format_display_date($booking['start_date'])) ?>
+                                    </div>
+                                    <div class="soft-note" style="font-size: 0.85em; margin-top: 2px;">
+                                        <?= e(format_display_date($booking['end_date'])) ?>
+                                    </div>
                                 </td>
+                                
+                                <td>
+                                    <span class="table-pill driver-pill text-wrap text-start" style="font-size: 0.9em; line-height: 1.2;">
+                                        <?= e($driverDisplay) ?>
+                                    </span>
+                                </td>
+                                
+                                <td>
+                                    <span class="status-pill <?= e(status_badge_class($booking['status'])) ?>"><?= e($booking['status']) ?></span>
+                                </td>
+                                
+                                <td>
+                                    <div class="text-wrap text-muted" style="font-size: 0.85em; line-height: 1.4;">
+                                        <?= e($remarkText) ?>
+                                    </div>
+                                </td>
+                                
                                 <td class="text-center">
-                                    <div class="table-actions">
-                                        <a class="btn btn-sm btn-shell" href="edit.php?id=<?= e((string) $booking['id']) ?>">Edit</a>
-                                        <form method="post" action="delete.php?id=<?= e((string) $booking['id']) ?>" onsubmit="return confirm('Delete this booking?');">
-                                            <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                                    <div class="d-flex gap-1 flex-wrap justify-content-center">
+                                        <a class="btn btn-sm btn-shell" style="padding: 0.25rem 0.6rem; font-size: 0.75rem;" href="edit.php?id=<?= e((string) $booking['id']) ?>">Edit</a>
+                                        <form method="post" action="delete.php?id=<?= e((string) $booking['id']) ?>" onsubmit="return confirm('Delete this booking?');" style="margin: 0;">
+                                            <button type="submit" class="btn btn-sm btn-outline-danger" style="padding: 0.25rem 0.6rem; font-size: 0.75rem;">Delete</button>
                                         </form>
                                     </div>
                                 </td>

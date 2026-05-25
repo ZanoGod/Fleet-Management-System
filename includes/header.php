@@ -7,6 +7,7 @@ $pageSummary = $pageSummary ?? 'Manage fleet operations from one place.';
 $activePage = $activePage ?? 'dashboard';
 $pageActions = $pageActions ?? '';
 $navigationItems = app_navigation();
+
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -16,84 +17,152 @@ $navigationItems = app_navigation();
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= e($pageTitle) ?></title>
 
-    <!-- Main Bootstrap CSS -->
     <link rel="stylesheet" href="<?= e(asset_url('assets/vendor/bootstrap/bootstrap.min.css')) ?>">
 
-    <!-- ADD THIS LINE: Bootstrap Icons CSS -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 
     <link rel="stylesheet" href="<?= e(asset_url('assets/css/style.css')) ?>">
     <link rel="stylesheet" href="<?= e(asset_url('assets/css/sidebar.css')) ?>">
 </head>
 
 <body>
+
     <div class="sidebar-backdrop" data-sidebar-close></div>
+
     <div class="app-shell">
 
+        <!-- SIDEBAR -->
         <aside class="sidebar" id="appSidebar">
 
+            <!-- BRAND -->
             <div class="sidebar-brand">
+
                 <div class="sidebar-brand-main">
-                    <div class="brand-mark">GSS</div>
+
+                    <button
+                        class="brand-mark collapsed-sidebar-trigger"
+                        type="button"
+                        data-sidebar-desktop-toggle
+                        aria-label="Expand Sidebar">
+
+                        <span class="brand-mark-text">GSS</span>
+
+                        <i class="bi bi-chevron-right brand-expand-icon"></i>
+
+                    </button>
+
                     <div class="sidebar-brand-copy">
                         <span class="sidebar-kicker">v1.0</span>
-                        <h2>Fleet Management</h2>
+                        <h2>Management</h2>
                     </div>
+
                 </div>
-            </div>
 
-            <!-- <div class="sidebar-section-label">Navigation</div> -->
-            <nav class="sidebar-nav">
-                <?php foreach ($navigationItems as $item): ?>
-                    <a class="sidebar-link <?= e(nav_is_active($activePage, $item['key'])) ?>" href="<?= e($item['path']) ?>">
-                        <span class="sidebar-link-icon"><?= $item['icon'] ?></span>
-                        <span class="sidebar-link-copy">
-                            <strong><?= e($item['label']) ?></strong>
-                        </span>
-                        <span class="sidebar-link-tooltip" aria-hidden="true">
-                            <strong><?= e($item['label']) ?></strong>
-                        </span>
-                    </a>
-                <?php endforeach; ?>
-            </nav>
-
-            <div class="sidebar-footer">
-                <button
+                <!-- COLLAPSE BUTTON -->
+                <!-- <button
                     class="sidebar-collapse-btn"
                     type="button"
                     data-sidebar-desktop-toggle
-                    aria-label="Toggle sidebar">
+                    aria-label="Toggle Sidebar">
 
-                    <!-- Icon when sidebar is OPEN (points left to close it) -->
-                    <i class="bi bi-arrow-left-square icon-expanded"></i>
+                    <i class="bi bi-chevron-left icon-expanded"></i>
+                    <i class="bi bi-chevron-right icon-collapsed"></i>
 
-                    <!-- Icon when sidebar is CLOSED (points right to open it) -->
-                    <i class="bi bi-arrow-right-square icon-collapsed"></i>
+                </button> -->
 
-                </button>
             </div>
+
+            <!-- NAVIGATION -->
+            <nav class="sidebar-nav">
+
+                <?php foreach ($navigationItems as $item): ?>
+
+                    <a class="sidebar-link <?= e(nav_is_active($activePage, $item['key'])) ?>"
+                        href="<?= e($item['path']) ?>">
+
+                        <span class="sidebar-link-icon">
+                            <?= $item['icon'] ?>
+                        </span>
+
+                        <span class="sidebar-link-copy">
+                            <strong><?= e($item['label']) ?></strong>
+                        </span>
+
+                        <span class="sidebar-link-tooltip" aria-hidden="true">
+                            <strong><?= e($item['label']) ?></strong>
+                        </span>
+
+                    </a>
+
+                <?php endforeach; ?>
+
+            </nav>
+
+            <!-- FOOTER -->
+            <div class="sidebar-footer">
+
+                <form action="<?= e(asset_url('logout.php')) ?>" method="POST">
+
+                    <button type="submit" class="sidebar-link logout-link">
+
+                        <span class="sidebar-link-icon">
+                            <i class="bi bi-box-arrow-left"></i>
+                        </span>
+
+                        <span class="sidebar-link-copy">
+                            <strong>Logout</strong>
+                        </span>
+
+                    </button>
+
+                </form>
+
+            </div>
+
         </aside>
 
+        <!-- MAIN -->
         <div class="app-main">
+
+            <!-- TOPBAR -->
             <header class="app-topbar">
+
                 <div class="page-heading">
-                    <button class="sidebar-toggle" type="button" data-sidebar-toggle aria-label="Open menu">
+
+                    <button
+                        class="sidebar-toggle"
+                        type="button"
+                        data-sidebar-toggle
+                        aria-label="Open Menu">
+
                         <span></span>
                         <span></span>
                         <span></span>
+
                     </button>
 
                     <div>
-                        <div class="page-kicker">Web-Based Fleet Management System</div>
+                        <div class="page-kicker">
+                            Web-Based Fleet Management System
+                        </div>
+
                         <h1><?= e($pageTitle) ?></h1>
-                        <!-- <p><?= e($pageSummary) ?></p> -->
                     </div>
+
                 </div>
 
                 <div class="topbar-actions">
-                    <span class="date-chip"><?= e(date('d M Y')) ?></span>
+
+                    <span class="date-chip">
+                        <?= e(date('d M Y')) ?>
+                    </span>
+
                     <?= $pageActions ?>
+
                 </div>
+
             </header>
 
+            <!-- CONTENT -->
             <main class="app-content">
