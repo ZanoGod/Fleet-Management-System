@@ -1,78 +1,112 @@
+/* =========================================================
+   DYNAMIC BOOKING TABLE (SCALES WITH UI STATE)
+========================================================= */
+
+/* 1. DEFAULT STATE (Sidebar Open - Compact) */
 .booking-table {
+    --tbl-min-width: 950px;
+    --pad-y: 0.55rem;
+    --pad-x: 0.4rem;
+    
+    --font-xs: 0.74rem;
+    --font-sm: 0.78rem;
+    --font-md: 0.82rem;
+    --font-lg: 0.86rem;
+    --font-xl: 0.9rem;
+    
+    --pill-width: 5.25rem;
+    --btn-width: 4.25rem;
+
     width: 100%;
-    min-width: 1120px;
+    min-width: var(--tbl-min-width);
     table-layout: fixed;
+    transition: all 0.3s ease; /* Smooth scaling */
 }
 
+/* 2. SIDEBAR COLLAPSED STATE (Medium Room) */
+body.sidebar-collapsed .booking-table {
+    --tbl-min-width: 1150px;
+    --pad-y: 0.75rem;
+    --pad-x: 0.6rem;
+    
+    --font-xs: 0.8rem;
+    --font-sm: 0.85rem;
+    --font-md: 0.9rem;
+    --font-lg: 0.95rem;
+    --font-xl: 1rem;
+    
+    --pill-width: 6rem;
+    --btn-width: 5rem;
+}
+
+/* 3. FULLSCREEN STATE (Maximum Room) */
+.table-panel:fullscreen .booking-table,
+.table-panel:-webkit-full-screen .booking-table {
+    --tbl-min-width: 1400px;
+    --pad-y: 1rem;
+    --pad-x: 0.85rem;
+    
+    --font-xs: 0.9rem;
+    --font-sm: 0.95rem;
+    --font-md: 1rem;
+    --font-lg: 1.05rem;
+    --font-xl: 1.15rem;
+    
+    --pill-width: 7rem;
+    --btn-width: 5.5rem;
+}
+
+/* Add a clean background when the panel enters fullscreen */
+.table-panel:fullscreen,
+.table-panel:-webkit-full-screen {
+    background-color: #fff;
+    padding: 2rem;
+    overflow-y: auto;
+}
+
+/* ---------------------------------------------------------
+   TABLE STRUCTURE (Using Variables)
+--------------------------------------------------------- */
+
 .booking-table thead th {
-    padding: 0.95rem 0.85rem;
-    font-size: 0.94rem;
+    padding: var(--pad-y) var(--pad-x);
+    font-size: var(--font-md);
 }
 
 .booking-table tbody td {
-    padding: 0.95rem 0.85rem;
+    padding: var(--pad-y) var(--pad-x);
     vertical-align: top;
     white-space: normal;
-    word-break: normal;
+    word-break: break-word;
     overflow-wrap: anywhere;
 }
 
-.booking-table th:nth-child(1),
-.booking-table td:nth-child(1) {
-    width: 17%;
-}
+/* Rebalanced columns */
+.booking-table th:nth-child(1), .booking-table td:nth-child(1) { width: 12%; } /* Guest */
+.booking-table th:nth-child(2), .booking-table td:nth-child(2) { width: 13%; } /* Car */
+.booking-table th:nth-child(3), .booking-table td:nth-child(3) { width: 13%; } /* Operator */
+.booking-table th:nth-child(4), .booking-table td:nth-child(4) { width: 5%; }  /* E/O */
+.booking-table th:nth-child(5), .booking-table td:nth-child(5) { width: 11%; } /* Dates */
+.booking-table th:nth-child(6), .booking-table td:nth-child(6) { width: 15%; } /* Driver */
+.booking-table th:nth-child(7), .booking-table td:nth-child(7) { width: 9%; }  /* Status */
+.booking-table th:nth-child(8), .booking-table td:nth-child(8) { width: 10%; } /* Remark */
+.booking-table th:nth-child(9), .booking-table td:nth-child(9) { width: 12%; } /* Action */
 
-.booking-table th:nth-child(2),
-.booking-table td:nth-child(2) {
-    width: 15%;
-}
-
-.booking-table th:nth-child(3),
-.booking-table td:nth-child(3) {
-    width: 12%;
-}
-
-.booking-table th:nth-child(4),
-.booking-table td:nth-child(4) {
-    width: 6%;
-}
-
-.booking-table th:nth-child(5),
-.booking-table td:nth-child(5) {
-    width: 13%;
-}
-
-.booking-table th:nth-child(6),
-.booking-table td:nth-child(6) {
-    width: 15%;
-}
-
-.booking-table th:nth-child(7),
-.booking-table td:nth-child(7) {
-    width: 10%;
-}
-
-.booking-table th:nth-child(8),
-.booking-table td:nth-child(8) {
-    width: 6%;
-}
-
-.booking-table th:nth-child(9),
-.booking-table td:nth-child(9) {
-    width: 6%;
-}
+/* ---------------------------------------------------------
+   TYPOGRAPHY & ELEMENTS (Using Variables)
+--------------------------------------------------------- */
 
 .booking-guest {
-    font-size: 1rem;
+    font-size: var(--font-xl);
     font-weight: 700;
-    line-height: 1.35;
+    line-height: 1.25;
 }
 
 .booking-car {
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-    gap: 0.3rem;
+    gap: 0.25rem;
 }
 
 .booking-car-pill,
@@ -82,63 +116,74 @@
     justify-content: flex-start;
     text-align: left;
     white-space: normal;
-    line-height: 1.25;
+    line-height: 1.2;
+    padding: calc(var(--pad-y) * 0.4) calc(var(--pad-x) * 1.2) !important; 
 }
 
+.booking-car-pill, 
 .booking-operator-pill {
-    font-size: 0.84rem;
+    font-size: var(--font-sm);
 }
 
 .booking-driver-pill {
-    font-size: 0.9rem;
+    font-size: var(--font-lg);
 }
 
 .booking-plate {
-    padding-left: 0.6rem;
-    font-size: 0.84rem;
+    padding-left: 0.4rem;
+    font-size: var(--font-sm);
 }
 
 .booking-even-odd {
     color: var(--muted);
-    font-size: 0.9rem;
+    font-size: var(--font-md);
     font-weight: 600;
 }
 
 .booking-date-primary {
     font-weight: 700;
     color: var(--cocoa);
-    font-size: 0.95rem;
+    font-size: var(--font-lg);
     line-height: 1.25;
 }
 
 .booking-date-secondary {
-    margin-top: 0.2rem;
-    font-size: 0.84rem;
+    margin-top: 0.15rem;
+    font-size: var(--font-sm);
 }
 
 .booking-table .status-pill {
-    min-width: 6.75rem;
+    min-width: var(--pill-width);
+    font-size: var(--font-sm);
+    padding: calc(var(--pad-y) * 0.4) calc(var(--pad-x) * 1.2);
     white-space: nowrap;
 }
 
 .booking-remark {
     color: var(--muted);
-    font-size: 0.84rem;
-    line-height: 1.4;
+    font-size: var(--font-sm);
+    line-height: 1.35;
 }
 
-.table-actions-compact {
-    gap: 0.4rem;
+/* ---------------------------------------------------------
+   DYNAMIC ACTION BUTTONS
+--------------------------------------------------------- */
+
+.booking-table .table-actions-compact {
+    display: flex;
+    justify-content: center;
+    gap: 0.35rem;
     flex-wrap: wrap;
 }
 
-.table-actions-compact .btn {
-    padding: 0.35rem 0.68rem;
-    font-size: 0.76rem;
-    line-height: 1.2;
+.booking-table .btn-sm {
+    min-width: var(--btn-width);
+    padding: calc(var(--pad-y) * 0.4) calc(var(--pad-x) * 1.2);
+    font-size: var(--font-xs);
 }
 
-@media (max-width: 1199.98px) {
+/* Breakpoint adjustment */
+@media (max-width: 991.98px) {
     .booking-table {
         table-layout: auto;
     }
