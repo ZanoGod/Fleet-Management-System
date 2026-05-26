@@ -95,6 +95,15 @@ function format_compact_date_range(?string $startDate, ?string $endDate): string
     return date('d M Y', $startTimestamp) . ' - ' . date('d M Y', $endTimestamp);
 }
 
+function booking_assignment_statuses(): array
+{
+    return [
+        'Pending',
+        'Confirm',
+        'In Service',
+    ];
+}
+
 function booking_statuses(): array
 {
     return [
@@ -109,6 +118,7 @@ function status_badge_class(string $status): string
 {
     return match (strtolower($status)) {
         'confirm' => 'status-confirm',
+        'in service' => 'status-service',
         'completed' => 'status-completed',
         'cancelled' => 'status-cancelled',
         default => 'status-pending',
@@ -258,7 +268,7 @@ function driver_status_class(string $status): string
 {
     return match (strtolower($status)) {
         'available' => 'resource-available',
-        'on trip' => 'resource-assigned',
+        'assigned', 'on trip' => 'resource-assigned',
         'leave' => 'resource-maintenance',
         default => 'resource-inactive',
     };
@@ -334,6 +344,51 @@ function fetch_operators_for_select(mysqli $db, bool $activeOnly = false): array
     }
 
     return $operators;
+}
+
+function fetch_resource_booking_assignments(mysqli $db, string $resourceColumn): array
+{
+    if (!in_array($resourceColumn, ['car_id', 'driver_id'], true)) {
+        return [];
+    }
+
+    $assignments = [];
+    $statuses = booking_assignment_statuses();
+    $placeholders = implode(', ', array_fill(0, count($statuses), '?'));
+    $sql = "SELECT
+                {$resourceColumn} AS resource_id,
+                guest_company_name,
+                start_date,
+                end_date
+            FROM bookings
+            WHERE {$resourceColumn} IS NOT NULL
+              AND status IN ({$placeholders})
+            ORDER BY start_date ASC, end_date ASC, id ASC";
+
+    $statement = $db->prepare($sql);
+
+    if (!$statement instanceof mysqli_stmt) {
+        return [];
+    }
+
+    bind_statement_params($statement, str_repeat('s', count($statuses)), $statuses);
+    $statement->execute();
+    $result = $statement->get_result();
+
+    while ($row = $result->fetch_assoc()) {
+        $resourceId = (int) ($row['resource_id'] ?? 0);
+
+        if ($resourceId <= 0) {
+            continue;
+        }
+
+        unset($row['resource_id']);
+        $assignments[$resourceId][] = $row;
+    }
+
+    $statement->close();
+
+    return $assignments;
 }
 
 function booking_car_display(array $booking): string

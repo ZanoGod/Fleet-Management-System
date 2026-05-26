@@ -1,0 +1,120 @@
+.cars-table {
+    width: 100%;
+    /* Increase this from 100px to force a horizontal scrollbar on smaller screens */
+    min-width: 1100px; 
+    table-layout: fixed;
+}
+
+.cars-table thead th {
+    font-size: 0.94rem;
+    padding: 0.95rem 0.85rem;
+}
+
+.cars-table tbody td {
+    padding: 0.95rem 0.85rem;
+    vertical-align: top;
+    word-break: normal;
+    overflow-wrap: anywhere;
+}
+
+.cars-table th:nth-child(1),
+.cars-table td:nth-child(1) {
+    width: 15%;
+}
+
+.cars-table th:nth-child(2),
+.cars-table td:nth-child(2) {
+    width: 8%;
+}
+
+.cars-table th:nth-child(3),
+.cars-table td:nth-child(3) {
+    width: 6%;
+}
+
+.cars-table th:nth-child(4),
+.cars-table td:nth-child(4) {
+    width: 6%;
+    text-align: center;
+}
+
+.cars-table th:nth-child(5),
+.cars-table td:nth-child(5) {
+    width: 11%;
+    text-align: center;
+}
+
+.cars-table th:nth-child(6),
+.cars-table td:nth-child(6),
+.cars-table th:nth-child(7),
+.cars-table td:nth-child(7) {
+    width: 12%;
+}
+
+/* Decrease Guest/Company slightly */
+.cars-table th:nth-child(8),
+.cars-table td:nth-child(8) {
+    width: 11%; /* Was 13% */
+}
+
+/* Increase Action column to fit the buttons naturally */
+.cars-table th:nth-child(9),
+.cars-table td:nth-child(9) {
+    width: 8%; /* Was 6% */
+}
+
+.cars-table .resource-pill {
+    min-width: 7rem;
+    white-space: nowrap;
+    text-align: center;
+}
+
+.cars-table .assignment-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.cars-table .assignment-line {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    color: var(--cocoa);
+    line-height: 1.35;
+}
+
+.cars-table .assignment-line-guest {
+    color: var(--ink);
+}
+
+.cars-table .assignment-index {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.35rem;
+    height: 1.35rem;
+    border-radius: 999px;
+    background: rgba(255, 154, 0, 0.18);
+    color: var(--cocoa);
+    font-size: 0.76rem;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+.cars-table .assignment-empty {
+    color: var(--muted);
+}
+
+.cars-table .text-center .d-flex {
+    gap: 0.5rem;
+}
+
+.cars-table .btn-sm {
+    min-width: 5.4rem;
+}
+
+@media (max-width: 1199.98px) {
+    .cars-table {
+        table-layout: auto;
+    }
+}

@@ -1,0 +1,145 @@
+.booking-table {
+    width: 100%;
+    min-width: 1120px;
+    table-layout: fixed;
+}
+
+.booking-table thead th {
+    padding: 0.95rem 0.85rem;
+    font-size: 0.94rem;
+}
+
+.booking-table tbody td {
+    padding: 0.95rem 0.85rem;
+    vertical-align: top;
+    white-space: normal;
+    word-break: normal;
+    overflow-wrap: anywhere;
+}
+
+.booking-table th:nth-child(1),
+.booking-table td:nth-child(1) {
+    width: 17%;
+}
+
+.booking-table th:nth-child(2),
+.booking-table td:nth-child(2) {
+    width: 15%;
+}
+
+.booking-table th:nth-child(3),
+.booking-table td:nth-child(3) {
+    width: 12%;
+}
+
+.booking-table th:nth-child(4),
+.booking-table td:nth-child(4) {
+    width: 6%;
+}
+
+.booking-table th:nth-child(5),
+.booking-table td:nth-child(5) {
+    width: 13%;
+}
+
+.booking-table th:nth-child(6),
+.booking-table td:nth-child(6) {
+    width: 15%;
+}
+
+.booking-table th:nth-child(7),
+.booking-table td:nth-child(7) {
+    width: 10%;
+}
+
+.booking-table th:nth-child(8),
+.booking-table td:nth-child(8) {
+    width: 6%;
+}
+
+.booking-table th:nth-child(9),
+.booking-table td:nth-child(9) {
+    width: 6%;
+}
+
+.booking-guest {
+    font-size: 1rem;
+    font-weight: 700;
+    line-height: 1.35;
+}
+
+.booking-car {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.3rem;
+}
+
+.booking-car-pill,
+.booking-operator-pill,
+.booking-driver-pill {
+    max-width: 100%;
+    justify-content: flex-start;
+    text-align: left;
+    white-space: normal;
+    line-height: 1.25;
+}
+
+.booking-operator-pill {
+    font-size: 0.84rem;
+}
+
+.booking-driver-pill {
+    font-size: 0.9rem;
+}
+
+.booking-plate {
+    padding-left: 0.6rem;
+    font-size: 0.84rem;
+}
+
+.booking-even-odd {
+    color: var(--muted);
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.booking-date-primary {
+    font-weight: 700;
+    color: var(--cocoa);
+    font-size: 0.95rem;
+    line-height: 1.25;
+}
+
+.booking-date-secondary {
+    margin-top: 0.2rem;
+    font-size: 0.84rem;
+}
+
+.booking-table .status-pill {
+    min-width: 6.75rem;
+    white-space: nowrap;
+}
+
+.booking-remark {
+    color: var(--muted);
+    font-size: 0.84rem;
+    line-height: 1.4;
+}
+
+.table-actions-compact {
+    gap: 0.4rem;
+    flex-wrap: wrap;
+}
+
+.table-actions-compact .btn {
+    padding: 0.35rem 0.68rem;
+    font-size: 0.76rem;
+    line-height: 1.2;
+}
+
+@media (max-width: 1199.98px) {
+    .booking-table {
+        table-layout: auto;
+    }
+}

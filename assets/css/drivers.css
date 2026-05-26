@@ -1,0 +1,106 @@
+.drivers-table {
+    width: 100%;
+    min-width: 980px;
+    table-layout: fixed;
+}
+
+.drivers-table thead th {
+    font-size: 0.94rem;
+    padding: 0.95rem 0.85rem;
+}
+
+.drivers-table tbody td {
+    padding: 0.95rem 0.85rem;
+    vertical-align: top;
+    word-break: normal;
+    overflow-wrap: anywhere;
+}
+
+.drivers-table th:nth-child(1),
+.drivers-table td:nth-child(1) {
+    width: 18%;
+}
+
+.drivers-table th:nth-child(2),
+.drivers-table td:nth-child(2) {
+    width: 14%;
+}
+
+.drivers-table th:nth-child(3),
+.drivers-table td:nth-child(3) {
+    width: 12%;
+    text-align: center;
+}
+
+.drivers-table th:nth-child(4),
+.drivers-table td:nth-child(4),
+.drivers-table th:nth-child(5),
+.drivers-table td:nth-child(5) {
+    width: 13%;
+}
+
+.drivers-table th:nth-child(6),
+.drivers-table td:nth-child(6) {
+    width: 20%;
+}
+
+.drivers-table th:nth-child(7),
+.drivers-table td:nth-child(7) {
+    width: 10%;
+}
+
+.drivers-table .resource-pill {
+    min-width: 7rem;
+    white-space: nowrap;
+    text-align: center;
+}
+
+.drivers-table .assignment-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.drivers-table .assignment-line {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    color: var(--cocoa);
+    line-height: 1.35;
+}
+
+.drivers-table .assignment-line-guest {
+    color: var(--ink);
+}
+
+.drivers-table .assignment-index {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.35rem;
+    height: 1.35rem;
+    border-radius: 999px;
+    background: rgba(255, 154, 0, 0.18);
+    color: var(--cocoa);
+    font-size: 0.76rem;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+.drivers-table .assignment-empty {
+    color: var(--muted);
+}
+
+.drivers-table .text-center .d-flex {
+    gap: 0.5rem;
+}
+
+.drivers-table .btn-sm {
+    min-width: 5.4rem;
+}
+
+@media (max-width: 1199.98px) {
+    .drivers-table {
+        table-layout: auto;
+    }
+}

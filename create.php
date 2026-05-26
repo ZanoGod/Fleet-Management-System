@@ -32,7 +32,7 @@ if ($db instanceof mysqli) {
     $operators = fetch_operators_for_select($db);
 
     // Fetch all active bookings to pass to the frontend form for real-time date filtering
-    $res = $db->query("SELECT car_id, driver_id, start_date, end_date FROM bookings WHERE status IN ('Pending', 'Confirm')");
+    $res = $db->query("SELECT car_id, driver_id, start_date, end_date FROM bookings WHERE status IN ('Pending', 'Confirm', 'In Service')");
     if ($res) {
         while ($row = $res->fetch_assoc()) {
             $activeBookings[] = $row;
@@ -110,7 +110,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $carCheck = $db->prepare(
                 "SELECT start_date, end_date FROM bookings 
                  WHERE car_id = ? 
-                 AND status IN ('Pending', 'Confirm') 
+                 AND status IN ('Pending', 'Confirm', 'In Service') 
                  AND start_date <= ? AND end_date >= ?"
             );
             $carCheck->bind_param('iss', $finalCarId, $booking['end_date'], $booking['start_date']);
@@ -127,7 +127,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $drvCheck = $db->prepare(
                 "SELECT start_date, end_date FROM bookings 
                  WHERE driver_id = ? 
-                 AND status IN ('Pending', 'Confirm') 
+                 AND status IN ('Pending', 'Confirm', 'In Service') 
                  AND start_date <= ? AND end_date >= ?"
             );
             $drvCheck->bind_param('iss', $finalDriverId, $booking['end_date'], $booking['start_date']);

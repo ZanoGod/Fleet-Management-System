@@ -75,7 +75,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $carCheck = $db->prepare(
                 "SELECT start_date, end_date FROM bookings 
                  WHERE car_id = ? AND id != ?
-                 AND status IN ('Pending', 'Confirm') 
+                 AND status IN ('Pending', 'Confirm', 'In Service') 
                  AND start_date <= ? AND end_date >= ?"
             );
             $carCheck->bind_param('iiss', $finalCarId, $id, $booking['end_date'], $booking['start_date']);
@@ -92,7 +92,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $drvCheck = $db->prepare(
                 "SELECT start_date, end_date FROM bookings 
                  WHERE driver_id = ? AND id != ?
-                 AND status IN ('Pending', 'Confirm') 
+                 AND status IN ('Pending', 'Confirm', 'In Service') 
                  AND start_date <= ? AND end_date >= ?"
             );
             $drvCheck->bind_param('iiss', $finalDriverId, $id, $booking['end_date'], $booking['start_date']);

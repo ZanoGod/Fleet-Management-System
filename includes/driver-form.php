@@ -17,6 +17,11 @@ $formTitle = $formTitle ?? 'Driver Form';
             <a class="btn btn-shell" href="drivers.php">Back to Drivers</a>
         </div>
 
+        <div class="form-assignment-note mb-4">
+            <strong>Booking dates stay in Bookings.</strong>
+            Guest/company, start date, and end date are linked from booking records automatically, so update those details from <a href="bookings.php">Bookings</a> instead of the driver master record.
+        </div>
+
         <form method="post" class="row g-3">
             <div class="col-md-6">
                 <label for="full_name" class="form-label">Driver Name</label>

@@ -6,7 +6,12 @@ $pageTitle = $pageTitle ?? 'Fleet Management System';
 $pageSummary = $pageSummary ?? 'Manage fleet operations from one place.';
 $activePage = $activePage ?? 'dashboard';
 $pageActions = $pageActions ?? '';
+$pageStyles = $pageStyles ?? [];
 $navigationItems = app_navigation();
+
+if (is_string($pageStyles)) {
+    $pageStyles = [$pageStyles];
+}
 
 ?>
 <!DOCTYPE html>
@@ -24,6 +29,10 @@ $navigationItems = app_navigation();
 
     <link rel="stylesheet" href="<?= e(asset_url('assets/css/style.css')) ?>">
     <link rel="stylesheet" href="<?= e(asset_url('assets/css/sidebar.css')) ?>">
+
+    <?php foreach ($pageStyles as $stylesheet): ?>
+        <link rel="stylesheet" href="<?= e(asset_url($stylesheet)) ?>">
+    <?php endforeach; ?>
 </head>
 
 <body>
@@ -54,7 +63,7 @@ $navigationItems = app_navigation();
 
                     <div class="sidebar-brand-copy">
                         <span class="sidebar-kicker">v1.0</span>
-                        <h2>Management</h2>
+                        <h2>Fleet Management</h2>
                     </div>
 
                 </div>
@@ -102,15 +111,26 @@ $navigationItems = app_navigation();
             <!-- FOOTER -->
             <div class="sidebar-footer">
 
-                <form action="<?= e(asset_url('logout.php')) ?>" method="POST">
 
-                    <button type="submit" class="sidebar-link logout-link">
+                <form
+                    class="logout-form"
+                    action="<?= e(asset_url('logout.php')) ?>"
+                    method="POST">
+
+                    <button
+                        type="submit"
+                        class="sidebar-link logout-link"
+                        aria-label="Logout">
 
                         <span class="sidebar-link-icon">
                             <i class="bi bi-box-arrow-left"></i>
                         </span>
 
                         <span class="sidebar-link-copy">
+                            <strong>Logout</strong>
+                        </span>
+
+                        <span class="sidebar-link-tooltip" aria-hidden="true">
                             <strong>Logout</strong>
                         </span>
 

@@ -169,7 +169,7 @@ require __DIR__ . '/includes/messages.php';
     </div>
 <?php endif; ?>
 
-<section class="card-shell section-card mb-4">
+<section class="card-shell section-card mb-4" id="reportsFiltersSection">
     <div class="section-title">
         <div>
             <h2>Report Filters</h2>
@@ -177,7 +177,7 @@ require __DIR__ . '/includes/messages.php';
         </div>
     </div>
 
-    <form method="get" class="filter-grid" style="grid-template-columns: 2fr 1fr 1fr auto;">
+    <form method="get" action="reports.php#reportsResultsSection" class="filter-grid" style="grid-template-columns: 2fr 1fr 1fr auto;" data-preserve-scroll="reportsFiltersSection">
         <div>
             <label for="search" class="form-label">Search</label>
             <input type="text" class="form-control" id="search" name="search" value="<?= e($filters['search']) ?>" placeholder="Guest, car, operator, driver, remark">
@@ -225,7 +225,7 @@ require __DIR__ . '/includes/messages.php';
     </div>
 </section>
 
-<section class="card-shell section-card mt-4">
+<section class="card-shell section-card mt-4" id="reportsResultsSection">
     <div class="section-title">
         <div>
             <h2>Booking Report Results</h2>

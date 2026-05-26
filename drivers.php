@@ -8,6 +8,7 @@ $activePage = 'drivers';
 $pageTitle = 'Drivers';
 $pageSummary = 'View total drivers and maintain their availability for trip assignments.';
 $pageActions = '<a class="btn btn-accent" href="driver-create.php">Add Driver</a>';
+$pageStyles = ['assets/css/drivers.css'];
 $flash = get_flash();
 
 $filters = [
@@ -16,6 +17,7 @@ $filters = [
 ];
 
 $drivers = [];
+$driverAssignments = [];
 $stats = [
     'total' => 0,
     'available' => 0,
@@ -30,19 +32,30 @@ if ($db instanceof mysqli) {
     $params = [];
 
     if ($filters['search'] !== '') {
-        $where[] = '(full_name LIKE ? OR phone_number LIKE ? OR note LIKE ?)';
+        $where[] = '(
+            drivers.full_name LIKE ?
+            OR drivers.phone_number LIKE ?
+            OR drivers.note LIKE ?
+            OR EXISTS (
+                SELECT 1
+                FROM bookings AS booking_search
+                WHERE booking_search.driver_id = drivers.id
+                  AND booking_search.status IN (\'Pending\', \'Confirm\', \'In Service\')
+                  AND booking_search.guest_company_name LIKE ?
+            )
+        )';
         $searchValue = '%' . $filters['search'] . '%';
-        $types .= 'sss';
-        array_push($params, $searchValue, $searchValue, $searchValue);
+        $types .= 'ssss';
+        array_push($params, $searchValue, $searchValue, $searchValue, $searchValue);
     }
 
     if ($filters['status'] !== '') {
-        $where[] = 'driver_status = ?';
+        $where[] = 'drivers.driver_status = ?';
         $types .= 's';
         $params[] = $filters['status'];
     }
 
-    $sql = 'SELECT id, full_name, phone_number, driver_status, note FROM drivers';
+    $sql = 'SELECT drivers.id, drivers.full_name, drivers.phone_number, drivers.driver_status FROM drivers';
 
     if ($where !== []) {
         $sql .= ' WHERE ' . implode(' AND ', $where);
@@ -67,11 +80,13 @@ if ($db instanceof mysqli) {
         $statement->close();
     }
 
+    $driverAssignments = fetch_resource_booking_assignments($db, 'driver_id');
+
     $statsResult = $db->query(
         "SELECT
         COUNT(*) AS total,
         SUM(driver_status = 'Available') AS available,
-        SUM(driver_status = 'Assigned') AS assigned,
+        SUM(driver_status IN ('Assigned', 'On Trip')) AS assigned,
         SUM(driver_status = 'Leave') AS leave_count,
         SUM(driver_status = 'Inactive') AS inactive
      FROM drivers"
@@ -98,8 +113,8 @@ require __DIR__ . '/includes/messages.php';
         <small>Ready for booking</small>
     </div>
     <div class="card-shell overview-card">
-        <span>On Trip</span>
-        <strong><?= e((string) ($stats['on_trip'] ?? 0)) ?></strong>
+        <span>Assigned</span>
+        <strong><?= e((string) ($stats['assigned'] ?? 0)) ?></strong>
         <small>Currently assigned</small>
     </div>
     <div class="card-shell overview-card">
@@ -109,18 +124,18 @@ require __DIR__ . '/includes/messages.php';
     </div>
 </section>
 
-<section class="card-shell section-card mb-4">
+<section class="card-shell section-card mb-4" id="driversFiltersSection">
     <div class="section-title">
         <div>
             <h2>Search Drivers</h2>
-            <p>Filter by name, phone number, note, or status.</p>
+            <p>Filter by name, phone number, linked guest/company, or status.</p>
         </div>
     </div>
 
-    <form method="get" class="filter-grid">
+    <form method="get" action="drivers.php#driversResultsSection" class="filter-grid" data-preserve-scroll="driversFiltersSection">
         <div>
             <label for="search" class="form-label">Search</label>
-            <input type="text" class="form-control" id="search" name="search" value="<?= e($filters['search']) ?>" placeholder="Driver name, phone, note">
+            <input type="text" class="form-control" id="search" name="search" value="<?= e($filters['search']) ?>" placeholder="Driver name, phone, or guest/company">
         </div>
         <div>
             <label for="status" class="form-label">Status</label>
@@ -137,37 +152,90 @@ require __DIR__ . '/includes/messages.php';
     </form>
 </section>
 
-<section class="card-shell section-card">
+<section class="card-shell section-card" id="driversResultsSection">
     <div class="section-title">
         <div>
             <h2>Driver List</h2>
-            <p>Keep driver records ready for daily fleet operations.</p>
+            <p>Keep driver records ready for daily fleet operations with numbered active bookings.</p>
         </div>
     </div>
 
     <div class="table-responsive">
-        <table class="table data-table">
+        <table class="table data-table drivers-table align-middle">
             <thead>
                 <tr>
                     <th>Driver Name</th>
                     <th>Phone Number</th>
                     <th>Status</th>
-                    <th>Note</th>
+                    <th>Start Date</th>
+                    <th>End Date</th>
+                    <th>Guest / Company</th>
                     <th class="text-center">Action</th>
                 </tr>
             </thead>
             <tbody>
                 <?php if ($drivers === []): ?>
                     <tr>
-                        <td colspan="5" class="text-center py-5 text-muted-soft">No drivers found.</td>
+                        <td colspan="7" class="text-center py-5 text-muted-soft">No drivers found.</td>
                     </tr>
                 <?php else: ?>
                     <?php foreach ($drivers as $driver): ?>
+                        <?php
+                        $assignments = $driverAssignments[(int) $driver['id']] ?? [];
+                        $showAssignmentIndex = count($assignments) > 1;
+                        ?>
                         <tr>
                             <td class="fw-semibold"><?= e($driver['full_name']) ?></td>
                             <td><?= e($driver['phone_number']) ?></td>
                             <td><span class="resource-pill <?= e(driver_status_class($driver['driver_status'])) ?>"><?= e($driver['driver_status']) ?></span></td>
-                            <td class="note-cell"><?= e($driver['note'] ?: '-') ?></td>
+                            <td>
+                                <?php if ($assignments === []): ?>
+                                    <span class="assignment-empty">-</span>
+                                <?php else: ?>
+                                    <div class="assignment-list">
+                                        <?php foreach ($assignments as $index => $assignment): ?>
+                                            <div class="assignment-line">
+                                                <?php if ($showAssignmentIndex): ?>
+                                                    <span class="assignment-index"><?= e((string) ($index + 1)) ?></span>
+                                                <?php endif; ?>
+                                                <span><?= e(format_display_date($assignment['start_date'] ?? null)) ?></span>
+                                            </div>
+                                        <?php endforeach; ?>
+                                    </div>
+                                <?php endif; ?> 
+                            </td>
+                            <td>
+                                <?php if ($assignments === []): ?>
+                                    <span class="assignment-empty">-</span>
+                                <?php else: ?>
+                                    <div class="assignment-list">
+                                        <?php foreach ($assignments as $index => $assignment): ?>
+                                            <div class="assignment-line">
+                                                <?php if ($showAssignmentIndex): ?>
+                                                    <span class="assignment-index"><?= e((string) ($index + 1)) ?></span>
+                                                <?php endif; ?>
+                                                <span><?= e(format_display_date($assignment['end_date'] ?? null)) ?></span>
+                                            </div>
+                                        <?php endforeach; ?>
+                                    </div>
+                                <?php endif; ?>
+                            </td>
+                            <td>
+                                <?php if ($assignments === []): ?>
+                                    <span class="assignment-empty">-</span>
+                                <?php else: ?>
+                                    <div class="assignment-list">
+                                        <?php foreach ($assignments as $index => $assignment): ?>
+                                            <div class="assignment-line assignment-line-guest">
+                                                <?php if ($showAssignmentIndex): ?>
+                                                    <span class="assignment-index"><?= e((string) ($index + 1)) ?></span>
+                                                <?php endif; ?>
+                                                <span><?= e($assignment['guest_company_name'] ?? '-') ?></span>
+                                            </div>
+                                        <?php endforeach; ?>
+                                    </div>
+                                <?php endif; ?>
+                            </td>
                             <td class="text-center">
                                 <div class="d-flex justify-content-center gap-2 flex-wrap">
                                     <a class="btn btn-sm btn-shell" href="driver-edit.php?id=<?= e((string) $driver['id']) ?>">Edit</a>

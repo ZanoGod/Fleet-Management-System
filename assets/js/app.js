@@ -26,7 +26,12 @@ document.addEventListener('DOMContentLoaded', function () {
         '[data-select-or-type-input]'
     );
 
+    const preserveScrollForms = document.querySelectorAll(
+        '[data-preserve-scroll]'
+    );
+
     const sidebarStorageKey = 'fleet_sidebar_collapsed';
+    const filterScrollStorageKey = 'gss_filter_scroll';
 
     /* =========================================================
        HELPERS
@@ -34,6 +39,41 @@ document.addEventListener('DOMContentLoaded', function () {
 
     const isDesktopViewport = () => {
         return window.innerWidth >= 992;
+    };
+
+    const scrollToTarget = (
+        targetId,
+        fallbackScrollY = null
+    ) => {
+
+        const target = targetId
+            ? document.getElementById(targetId)
+            : null;
+
+        if (target) {
+            const targetTop = Math.max(
+                0,
+                target.getBoundingClientRect().top
+                + window.pageYOffset
+                - 24
+            );
+
+            window.scrollTo({
+                top: targetTop,
+                left: 0,
+                behavior: 'auto'
+            });
+
+            return;
+        }
+
+        if (fallbackScrollY !== null) {
+            window.scrollTo({
+                top: fallbackScrollY,
+                left: 0,
+                behavior: 'auto'
+            });
+        }
     };
 
     /* =========================================================
@@ -118,6 +158,56 @@ document.addEventListener('DOMContentLoaded', function () {
         setDesktopSidebarCollapsed(true, false);
     } else {
         setDesktopSidebarCollapsed(false, false);
+    }
+
+    const savedFilterScroll = sessionStorage.getItem(
+        filterScrollStorageKey
+    );
+
+    if (savedFilterScroll) {
+        try {
+            const parsedScroll = JSON.parse(
+                savedFilterScroll
+            );
+
+            if (
+                parsedScroll &&
+                parsedScroll.path === window.location.pathname
+            ) {
+                requestAnimationFrame(() => {
+                    setTimeout(() => {
+                        scrollToTarget(
+                            parsedScroll.targetId || '',
+                            Number(parsedScroll.scrollY) || 0
+                        );
+                    }, 120);
+                });
+            }
+        } catch (error) {
+            console.error(
+                'Scroll restore error:',
+                error
+            );
+        }
+
+        sessionStorage.removeItem(
+            filterScrollStorageKey
+        );
+    }
+
+    const hashTargetId = window.location.hash
+        ? window.location.hash.slice(1)
+        : '';
+
+    if (hashTargetId !== '') {
+        requestAnimationFrame(() => {
+            setTimeout(() => {
+                scrollToTarget(
+                    hashTargetId,
+                    null
+                );
+            }, 180);
+        });
     }
 
     /* =========================================================
@@ -226,6 +316,37 @@ document.addEventListener('DOMContentLoaded', function () {
                 );
 
             }
+
+        });
+
+    });
+
+    /* =========================================================
+       FILTER SCROLL RESTORE
+    ========================================================= */
+
+    preserveScrollForms.forEach((form) => {
+
+        form.addEventListener('submit', () => {
+
+            const method = (
+                form.getAttribute('method') || 'get'
+            ).toLowerCase();
+
+            if (method !== 'get') {
+                return;
+            }
+
+            sessionStorage.setItem(
+                filterScrollStorageKey,
+                JSON.stringify({
+                    path: window.location.pathname,
+                    scrollY: window.scrollY,
+                    targetId: form.getAttribute(
+                        'data-preserve-scroll'
+                    ) || ''
+                })
+            );
 
         });
 
