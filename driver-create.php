@@ -40,13 +40,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if ($errors === []) {
-        $statement = $db->prepare(
+        if ($db === null) {
+            $errors[] = 'Database is not connected yet. Please import the SQL file and check config/database.php.';
+        } else {
+            $statement = $db->prepare(
             'INSERT INTO drivers
             (full_name, phone_number, license_no, driver_status, note)
             VALUES (?, ?, NULL, ?, ?)'
         );
 
-        if (!$statement instanceof mysqli_stmt) {
+            if (!$statement instanceof mysqli_stmt) {
             $errors[] = 'Failed to prepare the database query.';
         } else {
             $statement->bind_param(
@@ -64,7 +67,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
 
             $errors[] = 'Unable to save the driver. Please try again.';
-            $statement->close();
+            }
         }
     }
 }

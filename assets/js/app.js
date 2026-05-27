@@ -1,414 +1,286 @@
-document.addEventListener('DOMContentLoaded', function () {
+document.addEventListener("DOMContentLoaded", function () {
+  const body = document.body;
 
-    const body = document.body;
-
-    /* =========================================================
+  /* =========================================================
        ELEMENTS
     ========================================================= */
 
-    const mobileToggle = document.querySelector(
-        '[data-sidebar-toggle]'
-    );
+  const mobileToggle = document.querySelector("[data-sidebar-toggle]");
 
-    const backdrop = document.querySelector(
-        '[data-sidebar-close]'
-    );
+  const backdrop = document.querySelector("[data-sidebar-close]");
 
-    const desktopSidebarToggles = document.querySelectorAll(
-        '[data-sidebar-desktop-toggle]'
-    );
+  const desktopSidebarToggles = document.querySelectorAll(
+    "[data-sidebar-desktop-toggle]",
+  );
 
-    const fullscreenButtons = document.querySelectorAll(
-        '[data-fullscreen-target]'
-    );
+  const fullscreenButtons = document.querySelectorAll(
+    "[data-fullscreen-target]",
+  );
 
-    const selectOrTypeInputs = document.querySelectorAll(
-        '[data-select-or-type-input]'
-    );
+  const selectOrTypeInputs = document.querySelectorAll(
+    "[data-select-or-type-input]",
+  );
 
-    const preserveScrollForms = document.querySelectorAll(
-        '[data-preserve-scroll]'
-    );
+  const preserveScrollForms = document.querySelectorAll(
+    "[data-preserve-scroll]",
+  );
 
-    const sidebarStorageKey = 'fleet_sidebar_collapsed';
-    const filterScrollStorageKey = 'gss_filter_scroll';
+  const sidebarStorageKey = "fleet_sidebar_collapsed";
+  const filterScrollStorageKey = "gss_filter_scroll";
 
-    /* =========================================================
+  /* =========================================================
        HELPERS
     ========================================================= */
 
-    const isDesktopViewport = () => {
-        return window.innerWidth >= 992;
-    };
+  const isDesktopViewport = () => {
+    return window.innerWidth >= 992;
+  };
 
-    const scrollToTarget = (
-        targetId,
-        fallbackScrollY = null
-    ) => {
+  const scrollToTarget = (targetId, fallbackScrollY = null) => {
+    const target = targetId ? document.getElementById(targetId) : null;
 
-        const target = targetId
-            ? document.getElementById(targetId)
-            : null;
+    if (target) {
+      const targetTop = Math.max(
+        0,
+        target.getBoundingClientRect().top + window.pageYOffset - 24,
+      );
 
-        if (target) {
-            const targetTop = Math.max(
-                0,
-                target.getBoundingClientRect().top
-                + window.pageYOffset
-                - 24
-            );
+      window.scrollTo({
+        top: targetTop,
+        left: 0,
+        behavior: "auto",
+      });
 
-            window.scrollTo({
-                top: targetTop,
-                left: 0,
-                behavior: 'auto'
-            });
+      return;
+    }
 
-            return;
-        }
+    if (fallbackScrollY !== null) {
+      window.scrollTo({
+        top: fallbackScrollY,
+        left: 0,
+        behavior: "auto",
+      });
+    }
+  };
 
-        if (fallbackScrollY !== null) {
-            window.scrollTo({
-                top: fallbackScrollY,
-                left: 0,
-                behavior: 'auto'
-            });
-        }
-    };
-
-    /* =========================================================
+  /* =========================================================
        SIDEBAR ICON SYNC
     ========================================================= */
 
-    const syncDesktopSidebarButtons = () => {
+  const syncDesktopSidebarButtons = () => {
+    const collapsed = body.classList.contains("sidebar-collapsed");
 
-        const collapsed = body.classList.contains(
-            'sidebar-collapsed'
-        );
+    desktopSidebarToggles.forEach((button) => {
+      const expandedIcon = button.querySelector(".icon-expanded");
 
-        desktopSidebarToggles.forEach((button) => {
+      const collapsedIcon = button.querySelector(".icon-collapsed");
 
-            const expandedIcon = button.querySelector(
-                '.icon-expanded'
-            );
+      if (expandedIcon) {
+        expandedIcon.style.display = collapsed ? "none" : "inline-flex";
+      }
 
-            const collapsedIcon = button.querySelector(
-                '.icon-collapsed'
-            );
+      if (collapsedIcon) {
+        collapsedIcon.style.display = collapsed ? "inline-flex" : "none";
+      }
 
-            if (expandedIcon) {
-                expandedIcon.style.display = collapsed
-                    ? 'none'
-                    : 'inline-flex';
-            }
+      button.setAttribute(
+        "aria-label",
+        collapsed ? "Expand sidebar" : "Collapse sidebar",
+      );
 
-            if (collapsedIcon) {
-                collapsedIcon.style.display = collapsed
-                    ? 'inline-flex'
-                    : 'none';
-            }
+      button.setAttribute("aria-pressed", collapsed);
+    });
+  };
 
-            button.setAttribute(
-                'aria-label',
-                collapsed
-                    ? 'Expand sidebar'
-                    : 'Collapse sidebar'
-            );
-
-            button.setAttribute(
-                'aria-pressed',
-                collapsed
-            );
-        });
-    };
-
-    /* =========================================================
+  /* =========================================================
        SET COLLAPSED STATE
     ========================================================= */
 
-    const setDesktopSidebarCollapsed = (
-        collapsed,
-        persistState = true
-    ) => {
+  const setDesktopSidebarCollapsed = (collapsed, persistState = true) => {
+    body.classList.toggle("sidebar-collapsed", collapsed);
 
-        body.classList.toggle(
-            'sidebar-collapsed',
-            collapsed
-        );
+    syncDesktopSidebarButtons();
 
-        syncDesktopSidebarButtons();
+    if (persistState) {
+      localStorage.setItem(sidebarStorageKey, collapsed ? "1" : "0");
+    }
+  };
 
-        if (persistState) {
-            localStorage.setItem(
-                sidebarStorageKey,
-                collapsed ? '1' : '0'
-            );
-        }
-    };
-
-    /* =========================================================
+  /* =========================================================
        INITIALIZE SIDEBAR STATE
     ========================================================= */
 
-    const savedState = localStorage.getItem(
-        sidebarStorageKey
-    );
+  const savedState = localStorage.getItem(sidebarStorageKey);
 
-    if (savedState === '1') {
-        setDesktopSidebarCollapsed(true, false);
-    } else {
-        setDesktopSidebarCollapsed(false, false);
-    }
+  if (savedState === "1") {
+    setDesktopSidebarCollapsed(true, false);
+  } else {
+    setDesktopSidebarCollapsed(false, false);
+  }
 
-    const savedFilterScroll = sessionStorage.getItem(
-        filterScrollStorageKey
-    );
+  const savedFilterScroll = sessionStorage.getItem(filterScrollStorageKey);
 
-    if (savedFilterScroll) {
-        try {
-            const parsedScroll = JSON.parse(
-                savedFilterScroll
-            );
+  if (savedFilterScroll) {
+    try {
+      const parsedScroll = JSON.parse(savedFilterScroll);
 
-            if (
-                parsedScroll &&
-                parsedScroll.path === window.location.pathname
-            ) {
-                requestAnimationFrame(() => {
-                    setTimeout(() => {
-                        scrollToTarget(
-                            parsedScroll.targetId || '',
-                            Number(parsedScroll.scrollY) || 0
-                        );
-                    }, 120);
-                });
-            }
-        } catch (error) {
-            console.error(
-                'Scroll restore error:',
-                error
-            );
-        }
-
-        sessionStorage.removeItem(
-            filterScrollStorageKey
-        );
-    }
-
-    const hashTargetId = window.location.hash
-        ? window.location.hash.slice(1)
-        : '';
-
-    if (hashTargetId !== '') {
+      if (parsedScroll && parsedScroll.path === window.location.pathname) {
         requestAnimationFrame(() => {
-            setTimeout(() => {
-                scrollToTarget(
-                    hashTargetId,
-                    null
-                );
-            }, 180);
+          setTimeout(() => {
+            scrollToTarget(
+              parsedScroll.targetId || "",
+              Number(parsedScroll.scrollY) || 0,
+            );
+          }, 120);
         });
+      }
+    } catch (error) {
+      console.error("Scroll restore error:", error);
     }
 
-    /* =========================================================
+    sessionStorage.removeItem(filterScrollStorageKey);
+  }
+
+  const hashTargetId = window.location.hash
+    ? window.location.hash.slice(1)
+    : "";
+
+  if (hashTargetId !== "") {
+    requestAnimationFrame(() => {
+      setTimeout(() => {
+        scrollToTarget(hashTargetId, null);
+      }, 180);
+    });
+  }
+
+  /* =========================================================
        MOBILE SIDEBAR
     ========================================================= */
 
-    if (mobileToggle) {
+  if (mobileToggle) {
+    mobileToggle.addEventListener("click", () => {
+      body.classList.toggle("sidebar-open");
+    });
+  }
 
-        mobileToggle.addEventListener('click', () => {
+  if (backdrop) {
+    backdrop.addEventListener("click", () => {
+      body.classList.remove("sidebar-open");
+    });
+  }
 
-            body.classList.toggle('sidebar-open');
-
-        });
-
-    }
-
-    if (backdrop) {
-
-        backdrop.addEventListener('click', () => {
-
-            body.classList.remove('sidebar-open');
-
-        });
-
-    }
-
-    /* =========================================================
+  /* =========================================================
        DESKTOP COLLAPSE
     ========================================================= */
 
-    desktopSidebarToggles.forEach((button) => {
+  desktopSidebarToggles.forEach((button) => {
+    button.addEventListener("click", () => {
+      if (!isDesktopViewport()) {
+        return;
+      }
 
-        button.addEventListener('click', () => {
+      const collapsed = body.classList.contains("sidebar-collapsed");
 
-            if (!isDesktopViewport()) {
-                return;
-            }
-
-            const collapsed = body.classList.contains(
-                'sidebar-collapsed'
-            );
-
-            setDesktopSidebarCollapsed(
-                !collapsed,
-                true
-            );
-
-        });
-
+      setDesktopSidebarCollapsed(!collapsed, true);
     });
+  });
 
-    /* =========================================================
+  /* =========================================================
        WINDOW RESIZE
     ========================================================= */
 
-    window.addEventListener('resize', () => {
+  window.addEventListener("resize", () => {
+    if (isDesktopViewport()) {
+      body.classList.remove("sidebar-open");
+    }
+  });
 
-        if (isDesktopViewport()) {
-
-            body.classList.remove('sidebar-open');
-
-        }
-
-    });
-
-    /* =========================================================
+  /* =========================================================
        FULLSCREEN
     ========================================================= */
 
-    fullscreenButtons.forEach((button) => {
+  fullscreenButtons.forEach((button) => {
+    button.addEventListener("click", async () => {
+      const targetId = button.getAttribute("data-fullscreen-target");
 
-        button.addEventListener('click', async () => {
+      const target = targetId ? document.getElementById(targetId) : null;
 
-            const targetId = button.getAttribute(
-                'data-fullscreen-target'
-            );
+      if (!target || typeof target.requestFullscreen !== "function") {
+        return;
+      }
 
-            const target = targetId
-                ? document.getElementById(targetId)
-                : null;
-
-            if (
-                !target ||
-                typeof target.requestFullscreen !== 'function'
-            ) {
-                return;
-            }
-
-            try {
-
-                if (document.fullscreenElement) {
-
-                    await document.exitFullscreen();
-
-                } else {
-
-                    await target.requestFullscreen();
-
-                }
-
-            } catch (error) {
-
-                console.error(
-                    'Fullscreen error:',
-                    error
-                );
-
-            }
-
-        });
-
+      try {
+        if (document.fullscreenElement) {
+          await document.exitFullscreen();
+        } else {
+          await target.requestFullscreen();
+        }
+      } catch (error) {
+        console.error("Fullscreen error:", error);
+      }
     });
+  });
 
-    /* =========================================================
+  /* =========================================================
        FILTER SCROLL RESTORE
     ========================================================= */
 
-    preserveScrollForms.forEach((form) => {
+  preserveScrollForms.forEach((form) => {
+    form.addEventListener("submit", () => {
+      const method = (form.getAttribute("method") || "get").toLowerCase();
 
-        form.addEventListener('submit', () => {
+      if (method !== "get") {
+        return;
+      }
 
-            const method = (
-                form.getAttribute('method') || 'get'
-            ).toLowerCase();
-
-            if (method !== 'get') {
-                return;
-            }
-
-            sessionStorage.setItem(
-                filterScrollStorageKey,
-                JSON.stringify({
-                    path: window.location.pathname,
-                    scrollY: window.scrollY,
-                    targetId: form.getAttribute(
-                        'data-preserve-scroll'
-                    ) || ''
-                })
-            );
-
-        });
-
+      sessionStorage.setItem(
+        filterScrollStorageKey,
+        JSON.stringify({
+          path: window.location.pathname,
+          scrollY: window.scrollY,
+          targetId: form.getAttribute("data-preserve-scroll") || "",
+        }),
+      );
     });
+  });
 
-    /* =========================================================
+  /* =========================================================
        SELECT OR TYPE INPUTS
     ========================================================= */
 
-    selectOrTypeInputs.forEach((input) => {
+  selectOrTypeInputs.forEach((input) => {
+    const hiddenFieldId = input.getAttribute("data-select-or-type-hidden");
 
-        const hiddenFieldId = input.getAttribute(
-            'data-select-or-type-hidden'
-        );
+    const hiddenField = hiddenFieldId
+      ? document.getElementById(hiddenFieldId)
+      : null;
 
-        const hiddenField = hiddenFieldId
-            ? document.getElementById(hiddenFieldId)
-            : null;
+    const dataListId = input.getAttribute("list");
 
-        const dataListId = input.getAttribute('list');
+    const dataList = dataListId ? document.getElementById(dataListId) : null;
 
-        const dataList = dataListId
-            ? document.getElementById(dataListId)
-            : null;
+    if (!hiddenField || !dataList) {
+      return;
+    }
 
-        if (!hiddenField || !dataList) {
-            return;
-        }
+    const syncHiddenField = () => {
+      const matchingOption = Array.from(dataList.options).find((option) => {
+        return option.value === input.value;
+      });
 
-        const syncHiddenField = () => {
+      hiddenField.value = matchingOption
+        ? matchingOption.getAttribute("data-id") || ""
+        : "";
+    };
 
-            const matchingOption = Array.from(
-                dataList.options
-            ).find((option) => {
+    input.addEventListener("input", syncHiddenField);
 
-                return option.value === input.value;
+    input.addEventListener("change", syncHiddenField);
 
-            });
+    input.addEventListener("blur", syncHiddenField);
 
-            hiddenField.value = matchingOption
-                ? matchingOption.getAttribute('data-id') || ''
-                : '';
+    syncHiddenField();
+  });
 
-        };
-
-        input.addEventListener(
-            'input',
-            syncHiddenField
-        );
-
-        input.addEventListener(
-            'change',
-            syncHiddenField
-        );
-
-        input.addEventListener(
-            'blur',
-            syncHiddenField
-        );
-
-        syncHiddenField();
-
-    });
 
 });
