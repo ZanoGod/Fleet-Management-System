@@ -128,6 +128,8 @@ CREATE TABLE bookings (
 
     custom_car_name VARCHAR(255) NULL,
 
+    secondary_car_id INT UNSIGNED NULL,
+
     driver_id INT UNSIGNED NULL,
 
     custom_driver_name VARCHAR(255) NULL,
@@ -170,6 +172,12 @@ CREATE TABLE bookings (
     CONSTRAINT fk_bookings_driver
     FOREIGN KEY (driver_id)
     REFERENCES drivers(id)
+    ON UPDATE CASCADE
+    ON DELETE SET NULL,
+
+    CONSTRAINT fk_bookings_secondary_car
+    FOREIGN KEY (secondary_car_id)
+    REFERENCES cars(id)
     ON UPDATE CASCADE
     ON DELETE SET NULL,
 
@@ -274,6 +282,7 @@ INSERT INTO bookings (
     guest_company_name,
     car_id,
     custom_car_name,
+    secondary_car_id,
     driver_id,
     custom_driver_name,
     operator_id,
@@ -290,6 +299,7 @@ INSERT INTO bookings (
     'Mr Yuichiro Hoshiro',
     1,
     NULL,
+    NULL,
     1,
     NULL,
     1,
@@ -304,6 +314,7 @@ INSERT INTO bookings (
 (
     'Mr. Koichiro Yuhara & Mr. Masayasu',
     2,
+    NULL,
     NULL,
     3,
     NULL,
@@ -320,6 +331,7 @@ INSERT INTO bookings (
     'SCSK / Mr. Yoichiro Iida',
     2,
     NULL,
+    NULL,
     1,
     NULL,
     3,
@@ -335,6 +347,7 @@ INSERT INTO bookings (
     'Mitsubishi Corporation',
     4,
     NULL,
+    NULL,
     2,
     NULL,
     4,
@@ -349,6 +362,7 @@ INSERT INTO bookings (
 (
     'Nikken International Myanmar Co., Ltd.',
     5,
+    NULL,
     NULL,
     5,
     NULL,

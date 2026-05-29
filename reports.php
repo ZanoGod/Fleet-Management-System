@@ -25,6 +25,7 @@ $reportSummary = [
     'total' => 0,
     'pending' => 0,
     'confirmed' => 0,
+    'in_service' => 0,
     'completed' => 0,
 ];
 $errors = [];
@@ -58,10 +59,10 @@ if ($db instanceof mysqli) {
     $params = [];
 
     if ($filters['search'] !== '') {
-        $where[] = '(b.guest_company_name LIKE ? OR b.operator_name LIKE ? OR o.full_name LIKE ? OR c.car_type LIKE ? OR c.plate_no LIKE ? OR b.custom_car_name LIKE ? OR d.full_name LIKE ? OR b.custom_driver_name LIKE ? OR b.even_odd LIKE ? OR b.remark LIKE ?)';
+        $where[] = '(b.guest_company_name LIKE ? OR b.operator_name LIKE ? OR o.full_name LIKE ? OR c.car_type LIKE ? OR c.plate_no LIKE ? OR c2.car_type LIKE ? OR c2.plate_no LIKE ? OR b.custom_car_name LIKE ? OR d.full_name LIKE ? OR b.custom_driver_name LIKE ? OR b.even_odd LIKE ? OR b.remark LIKE ?)';
         $searchValue = '%' . $filters['search'] . '%';
-        $types .= 'ssssssssss';
-        array_push($params, $searchValue, $searchValue, $searchValue, $searchValue, $searchValue, $searchValue, $searchValue, $searchValue, $searchValue, $searchValue);
+        $types .= 'ssssssssssss';
+        array_push($params, $searchValue, $searchValue, $searchValue, $searchValue, $searchValue, $searchValue, $searchValue, $searchValue, $searchValue, $searchValue, $searchValue, $searchValue);
     }
 
     if ($dateFrom !== null && $dateTo !== null && $errors === []) {
@@ -76,6 +77,7 @@ if ($db instanceof mysqli) {
                 b.operator_name,
                 b.custom_car_name,
                 b.custom_driver_name,
+                b.secondary_car_id,
                 b.even_odd,
                 b.start_date,
                 b.end_date,
@@ -83,10 +85,13 @@ if ($db instanceof mysqli) {
                 b.remark,
                 c.car_type,
                 c.plate_no,
+                c2.car_type AS secondary_car_type,
+                c2.plate_no AS secondary_plate_no,
                 d.full_name AS driver_name,
                 o.full_name AS operator_full_name
             FROM bookings AS b
             LEFT JOIN cars AS c ON c.id = b.car_id
+            LEFT JOIN cars AS c2 ON c2.id = b.secondary_car_id
             LEFT JOIN drivers AS d ON d.id = b.driver_id
             LEFT JOIN operators AS o ON o.id = b.operator_id";
 
@@ -116,6 +121,10 @@ if ($db instanceof mysqli) {
 
             if (($row['status'] ?? '') === 'Confirm') {
                 $reportSummary['confirmed']++;
+            }
+
+            if (($row['status'] ?? '') === 'In Service') {
+                $reportSummary['in_service']++;
             }
 
             if (($row['status'] ?? '') === 'Completed') {
@@ -219,6 +228,11 @@ require __DIR__ . '/includes/messages.php';
         <small>Ready to operate</small>
     </div>
     <div class="card-shell overview-card">
+        <span>In Service</span>
+        <strong><?= e((string) $reportSummary['in_service']) ?></strong>
+        <small>Trips running in this report</small>
+    </div>
+    <div class="card-shell overview-card">
         <span>Completed</span>
         <strong><?= e((string) $reportSummary['completed']) ?></strong>
         <small>Finished trips in this report</small>
@@ -262,16 +276,9 @@ require __DIR__ . '/includes/messages.php';
                             </td>
                             <td>
                                 <div class="d-flex flex-column align-items-start">
-                                    <?php if (trim((string) ($booking['custom_car_name'] ?? '')) !== ''): ?>
-                                        <span class="table-pill car-pill text-wrap text-start"><?= e($booking['custom_car_name']) ?></span>
-                                    <?php else: ?>
-                                        <span class="table-pill car-pill text-wrap text-start"><?= e($booking['car_type'] ?? '-') ?></span>
-                                        <?php if (trim((string) ($booking['plate_no'] ?? '')) !== ''): ?>
-                                            <span class="soft-note mt-1" style="padding-left: 10px; font-size: 0.85em;">
-                                                <?= e($booking['plate_no']) ?>
-                                            </span>
-                                        <?php endif; ?>
-                                    <?php endif; ?>
+                                    <?php foreach (booking_car_entries($booking) as $carLabel): ?>
+                                        <span class="table-pill car-pill text-wrap text-start mb-1"><?= e($carLabel) ?></span>
+                                    <?php endforeach; ?>
                                 </div>
                             </td>
                             <td>

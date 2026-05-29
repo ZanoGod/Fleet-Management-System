@@ -39,16 +39,9 @@ $recentBookings = $recentBookings ?? [];
                             
                             <td>
                                 <div class="d-flex flex-column align-items-start">
-                                    <?php if (trim((string) ($booking['custom_car_name'] ?? '')) !== ''): ?>
-                                        <span class="table-pill car-pill"><?= e($booking['custom_car_name']) ?></span>
-                                    <?php else: ?>
-                                        <span class="table-pill car-pill"><?= e($booking['car_type'] ?? '-') ?></span>
-                                        <?php if (trim((string) ($booking['plate_no'] ?? '')) !== ''): ?>
-                                            <span class="soft-note mt-1" style="padding-left: 10px; font-size: 0.85em;">
-                                                <?= e($booking['plate_no']) ?>
-                                            </span>
-                                        <?php endif; ?>
-                                    <?php endif; ?>
+                                    <?php foreach (booking_car_entries($booking) as $carLabel): ?>
+                                        <span class="table-pill car-pill mb-1"><?= e($carLabel) ?></span>
+                                    <?php endforeach; ?>
                                 </div>
                             </td>
 

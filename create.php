@@ -16,6 +16,7 @@ $activeBookings = []; // NEW: Array to hold current bookings for JS filtering
 $booking = [
     'guest_company_name' => '',
     'car_id' => '',
+    'secondary_car_id' => '',
     'driver_id' => '',
     'operator_id' => '',
     'operator_name' => '',
@@ -30,20 +31,14 @@ if ($db instanceof mysqli) {
     $cars = fetch_cars_for_select($db); 
     $drivers = fetch_drivers_for_select($db);
     $operators = fetch_operators_for_select($db);
-
-    // Fetch all active bookings to pass to the frontend form for real-time date filtering
-    $res = $db->query("SELECT car_id, driver_id, start_date, end_date FROM bookings WHERE status IN ('Pending', 'Confirm', 'In Service')");
-    if ($res) {
-        while ($row = $res->fetch_assoc()) {
-            $activeBookings[] = $row;
-        }
-    }
+    $activeBookings = fetch_active_booking_resources($db);
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $booking = [
         'guest_company_name' => old($_POST, 'guest_company_name'),
         'car_id'             => old($_POST, 'car_id'),
+        'secondary_car_id'   => old($_POST, 'secondary_car_id'),
         'driver_id'          => old($_POST, 'driver_id'),
         'operator_id'        => old($_POST, 'operator_id'),
         'operator_name'      => '',
@@ -69,6 +64,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $errors[] = 'Please choose a valid booking status.';
     }
 
+    if (!($db instanceof mysqli)) {
+        $errors[] = 'Database is not connected yet. Please check the database settings.';
+    }
+
     // --- CAR VALIDATION ---
     $finalCarId = null;
     if ($booking['car_id'] !== '') {
@@ -82,6 +81,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $errors[] = "The selected car ({$matchedCar['plate_no']}) is in maintenance.";
         } else {
             $finalCarId = $cId;
+        }
+    }
+
+    $finalSecondaryCarId = null;
+    if ($booking['secondary_car_id'] !== '') {
+        $secondaryCarId = (int) $booking['secondary_car_id'];
+        $matchedSecondaryCar = find_row_by_id($cars, $secondaryCarId);
+
+        if ($matchedSecondaryCar === null) {
+            $errors[] = 'Please choose a valid Car Type 2.';
+        } elseif ($secondaryCarId === $finalCarId) {
+            $errors[] = 'Car Type 1 and Car Type 2 must be different cars.';
+        } elseif (strtolower($matchedSecondaryCar['availability_status']) === 'maintenance') {
+            $errors[] = "The selected Car Type 2 ({$matchedSecondaryCar['plate_no']}) is in maintenance.";
+        } else {
+            $finalSecondaryCarId = $secondaryCarId;
         }
     }
 
@@ -100,26 +115,65 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
+    $finalOperatorId = null;
+    $operator = find_row_by_id($operators, (int) $booking['operator_id']);
+    if ($booking['operator_id'] !== '' && $operator === null) {
+        $errors[] = 'Please choose a valid operator.';
+    } elseif ($operator !== null) {
+        $finalOperatorId = (int) $booking['operator_id'];
+        $booking['operator_name'] = trim((string) ($operator['full_name'] ?? ''));
+    }
+
     // ==========================================
     // BACKEND DATE OVERLAP CHECKER
     // ==========================================
-    if ($errors === [] && $db instanceof mysqli && in_array($booking['status'], ['Pending', 'Confirm'])) {
+    if (
+        $errors === []
+        && $db instanceof mysqli
+        && in_allowed_values($booking['status'], booking_assignment_statuses())
+    ) {
         
         // 1. Check Car Overlap
         if ($finalCarId !== null) {
             $carCheck = $db->prepare(
                 "SELECT start_date, end_date FROM bookings 
-                 WHERE car_id = ? 
-                 AND status IN ('Pending', 'Confirm', 'In Service') 
-                 AND start_date <= ? AND end_date >= ?"
+                 WHERE (car_id = ? OR secondary_car_id = ?)
+                 AND status IN ('Pending', 'Confirm', 'In Service')
+                 AND start_date <= ? AND end_date >= ?
+                 LIMIT 1"
             );
-            $carCheck->bind_param('iss', $finalCarId, $booking['end_date'], $booking['start_date']);
-            $carCheck->execute();
-            $carRes = $carCheck->get_result();
-            if ($row = $carRes->fetch_assoc()) {
-                $errors[] = "This Car is already booked from " . format_display_date($row['start_date']) . " to " . format_display_date($row['end_date']) . ".";
+            if ($carCheck instanceof mysqli_stmt) {
+                $carCheck->bind_param('iiss', $finalCarId, $finalCarId, $booking['end_date'], $booking['start_date']);
+                $carCheck->execute();
+                $carRes = $carCheck->get_result();
+                if ($row = $carRes->fetch_assoc()) {
+                    $errors[] = "Car Type 1 is already booked from " . format_display_date($row['start_date']) . " to " . format_display_date($row['end_date']) . ".";
+                }
+                $carCheck->close();
+            } else {
+                $errors[] = 'Unable to validate Car Type 1 availability.';
             }
-            $carCheck->close();
+        }
+
+        if ($finalSecondaryCarId !== null) {
+            $secondaryCarCheck = $db->prepare(
+                "SELECT start_date, end_date FROM bookings
+                 WHERE (car_id = ? OR secondary_car_id = ?)
+                 AND status IN ('Pending', 'Confirm', 'In Service')
+                 AND start_date <= ? AND end_date >= ?
+                 LIMIT 1"
+            );
+            if ($secondaryCarCheck instanceof mysqli_stmt) {
+                $secondaryCarCheck->bind_param('iiss', $finalSecondaryCarId, $finalSecondaryCarId, $booking['end_date'], $booking['start_date']);
+                $secondaryCarCheck->execute();
+                $secondaryCarRes = $secondaryCarCheck->get_result();
+                if ($row = $secondaryCarRes->fetch_assoc()) {
+                    $errors[] = "Car Type 2 is already booked from " . format_display_date($row['start_date']) . " to " . format_display_date($row['end_date']) . ".";
+                }
+                $secondaryCarCheck->close();
+            } else {
+                $errors[] = 'Unable to validate Car Type 2 availability.';
+            }
         }
 
         // 2. Check Driver Overlap
@@ -128,36 +182,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 "SELECT start_date, end_date FROM bookings 
                  WHERE driver_id = ? 
                  AND status IN ('Pending', 'Confirm', 'In Service') 
-                 AND start_date <= ? AND end_date >= ?"
+                 AND start_date <= ? AND end_date >= ?
+                 LIMIT 1"
             );
-            $drvCheck->bind_param('iss', $finalDriverId, $booking['end_date'], $booking['start_date']);
-            $drvCheck->execute();
-            $drvRes = $drvCheck->get_result();
-            if ($row = $drvRes->fetch_assoc()) {
-                $errors[] = "This Driver is already booked from " . format_display_date($row['start_date']) . " to " . format_display_date($row['end_date']) . ".";
+            if ($drvCheck instanceof mysqli_stmt) {
+                $drvCheck->bind_param('iss', $finalDriverId, $booking['end_date'], $booking['start_date']);
+                $drvCheck->execute();
+                $drvRes = $drvCheck->get_result();
+                if ($row = $drvRes->fetch_assoc()) {
+                    $errors[] = "This Driver is already booked from " . format_display_date($row['start_date']) . " to " . format_display_date($row['end_date']) . ".";
+                }
+                $drvCheck->close();
+            } else {
+                $errors[] = 'Unable to validate driver availability.';
             }
-            $drvCheck->close();
         }
-    }
-
-    $operator = find_row_by_id($operators, (int) $booking['operator_id']);
-    if ($operator !== null) {
-        $booking['operator_name'] = trim((string) ($operator['full_name'] ?? ''));
     }
 
     if ($errors === [] && $db instanceof mysqli) {
         $statement = $db->prepare(
             'INSERT INTO bookings
-            (guest_company_name, car_id, custom_car_name, driver_id, custom_driver_name, operator_id, operator_name, even_odd, start_date, end_date, status, remark)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+            (guest_company_name, car_id, custom_car_name, secondary_car_id, driver_id, custom_driver_name, operator_id, operator_name, even_odd, start_date, end_date, status, remark)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
         );
 
         if ($statement) {
             $emptyStr = '';
             $statement->bind_param(
-                'sisisissssss',
-                $booking['guest_company_name'], $finalCarId, $emptyStr, $finalDriverId, $emptyStr,
-                $booking['operator_id'], $booking['operator_name'], $booking['even_odd'],
+                'sisiisissssss',
+                $booking['guest_company_name'], $finalCarId, $emptyStr, $finalSecondaryCarId, $finalDriverId, $emptyStr,
+                $finalOperatorId, $booking['operator_name'], $booking['even_odd'],
                 $booking['start_date'], $booking['end_date'], $booking['status'], $booking['remark']
             );
 
@@ -168,6 +222,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
             $errors[] = 'Unable to save the booking. Please try again.';
             $statement->close();
+        } else {
+            $errors[] = 'Failed to prepare the booking save query.';
         }
     }
 }

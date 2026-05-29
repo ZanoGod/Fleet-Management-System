@@ -23,6 +23,9 @@ $stats = [
     'total' => 0,
     'pending' => 0,
     'confirmed' => 0,
+    'in_service' => 0,
+    'completed' => 0,
+    'cancelled' => 0,
 ];
 
 if ($db instanceof mysqli) {
@@ -31,10 +34,10 @@ if ($db instanceof mysqli) {
     $params = [];
 
     if ($filters['search'] !== '') {
-        $where[] = '(b.guest_company_name LIKE ? OR c.car_type LIKE ? OR c.plate_no LIKE ? OR b.custom_car_name LIKE ? OR b.operator_name LIKE ? OR o.full_name LIKE ? OR d.full_name LIKE ? OR b.custom_driver_name LIKE ? OR b.even_odd LIKE ? OR b.remark LIKE ?)';
+        $where[] = '(b.guest_company_name LIKE ? OR c.car_type LIKE ? OR c.plate_no LIKE ? OR c2.car_type LIKE ? OR c2.plate_no LIKE ? OR b.custom_car_name LIKE ? OR b.operator_name LIKE ? OR o.full_name LIKE ? OR d.full_name LIKE ? OR b.custom_driver_name LIKE ? OR b.even_odd LIKE ? OR b.remark LIKE ?)';
         $searchValue = '%' . $filters['search'] . '%';
-        $types .= 'ssssssssss';
-        array_push($params, $searchValue, $searchValue, $searchValue, $searchValue, $searchValue, $searchValue, $searchValue, $searchValue, $searchValue, $searchValue);
+        $types .= 'ssssssssssss';
+        array_push($params, $searchValue, $searchValue, $searchValue, $searchValue, $searchValue, $searchValue, $searchValue, $searchValue, $searchValue, $searchValue, $searchValue, $searchValue);
     }
 
     if ($filters['status'] !== '') {
@@ -63,16 +66,20 @@ if ($db instanceof mysqli) {
                 b.even_odd,
                 b.custom_car_name,
                 b.custom_driver_name,
+                b.secondary_car_id,
                 b.start_date,
                 b.end_date,
                 b.status,
                 b.remark,
                 c.car_type,
                 c.plate_no,
+                c2.car_type AS secondary_car_type,
+                c2.plate_no AS secondary_plate_no,
                 d.full_name AS driver_name,
                 o.full_name AS operator_full_name
             FROM bookings AS b
             LEFT JOIN cars AS c ON c.id = b.car_id
+            LEFT JOIN cars AS c2 ON c2.id = b.secondary_car_id
             LEFT JOIN drivers AS d ON d.id = b.driver_id
             LEFT JOIN operators AS o ON o.id = b.operator_id";
 
@@ -104,7 +111,9 @@ if ($db instanceof mysqli) {
         COUNT(*) AS total,
         SUM(CASE WHEN status = 'Pending' THEN 1 ELSE 0 END) AS pending,
         SUM(CASE WHEN status = 'Confirm' THEN 1 ELSE 0 END) AS confirmed,
-        SUM(CASE WHEN status = 'Completed' THEN 1 ELSE 0 END) AS completed
+        SUM(CASE WHEN status = 'In Service' THEN 1 ELSE 0 END) AS in_service,
+        SUM(CASE WHEN status = 'Completed' THEN 1 ELSE 0 END) AS completed,
+        SUM(CASE WHEN status = 'Cancelled' THEN 1 ELSE 0 END) AS cancelled
      FROM bookings"
     );
 
@@ -134,13 +143,18 @@ require __DIR__ . '/includes/messages.php';
         <small>Ready to operate</small>
     </div>
     <div class="card-shell overview-card">
+        <span>In Service</span>
+        <strong><?= e((string) ($stats['in_service'] ?? 0)) ?></strong>
+        <small>Trips now in progress</small>
+    </div>
+    <div class="card-shell overview-card">
         <span>Completed</span>
         <strong><?= e((string) ($stats['completed'] ?? 0)) ?></strong>
         <small>Trips completed</small>
     </div>
     <div class="card-shell overview-card">
         <span>Cancelled</span>
-        <strong><?= e((string) (($stats['total'] ?? 0) - ($stats['pending'] ?? 0) - ($stats['confirmed'] ?? 0) - ($stats['completed'] ?? 0))) ?></strong>
+        <strong><?= e((string) ($stats['cancelled'] ?? 0)) ?></strong>
         <small>Trips cancelled</small>
     </div>
 </section>
@@ -228,16 +242,9 @@ require __DIR__ . '/includes/messages.php';
                                 
                                 <td>
                                     <div class="booking-car">
-                                        <?php if (trim((string) ($booking['custom_car_name'] ?? '')) !== ''): ?>
-                                            <span class="table-pill car-pill booking-car-pill"><?= e($booking['custom_car_name']) ?></span>
-                                        <?php else: ?>
-                                            <span class="table-pill car-pill booking-car-pill"><?= e($booking['car_type'] ?? '-') ?></span>
-                                            <?php if (trim((string) ($booking['plate_no'] ?? '')) !== ''): ?>
-                                                <span class="soft-note booking-plate">
-                                                    <?= e($booking['plate_no']) ?>
-                                                </span>
-                                            <?php endif; ?>
-                                        <?php endif; ?>
+                                        <?php foreach (booking_car_entries($booking) as $carLabel): ?>
+                                            <span class="table-pill car-pill booking-car-pill"><?= e($carLabel) ?></span>
+                                        <?php endforeach; ?>
                                     </div>
                                 </td>
                                 

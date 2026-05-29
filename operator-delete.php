@@ -28,16 +28,23 @@ if (!$statement instanceof mysqli_stmt) {
 }
 
 $statement->bind_param('i', $id);
-$success = $statement->execute();
-$affectedRows = $statement->affected_rows;
-$statement->close();
 
-if ($success && $affectedRows > 0) {
-    set_flash('success', 'Operator deleted successfully.');
-} elseif ($success) {
-    set_flash('danger', 'Operator could not be found.');
-} else {
-    set_flash('danger', 'This operator cannot be deleted because the operator is already used in a booking.');
+try {
+    $success = $statement->execute();
+    $affectedRows = $statement->affected_rows;
+
+    if ($success && $affectedRows > 0) {
+        set_flash('success', 'Operator deleted successfully.');
+    } else {
+        set_flash('danger', 'Operator could not be found.');
+    }
+} catch (mysqli_sql_exception $e) {
+    set_flash(
+        'danger',
+        'This operator cannot be deleted because the operator is already used in a booking.'
+    );
 }
+
+$statement->close();
 
 redirect('operators.php');

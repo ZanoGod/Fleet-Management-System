@@ -153,6 +153,7 @@ function ensure_schema(mysqli $db): void
 
     $bookingColumnUpdates = [
         'custom_car_name' => 'ALTER TABLE bookings ADD custom_car_name VARCHAR(255) NULL AFTER car_id',
+        'secondary_car_id' => 'ALTER TABLE bookings ADD secondary_car_id INT UNSIGNED NULL AFTER custom_car_name',
         'custom_driver_name' => 'ALTER TABLE bookings ADD custom_driver_name VARCHAR(255) NULL AFTER driver_id',
         'operator_id' => 'ALTER TABLE bookings ADD operator_id INT UNSIGNED NULL AFTER custom_driver_name',
         'even_odd' => "ALTER TABLE bookings ADD even_odd ENUM('Even', 'Odd') NULL AFTER operator_name",
@@ -170,10 +171,30 @@ function ensure_schema(mysqli $db): void
         $db->query('ALTER TABLE bookings MODIFY car_id INT UNSIGNED NULL');
     }
 
+    $secondaryCarIdColumn = schema_column($db, 'bookings', 'secondary_car_id');
+
+    if ($secondaryCarIdColumn !== null && strtoupper((string) ($secondaryCarIdColumn['Null'] ?? 'NO')) !== 'YES') {
+        $db->query('ALTER TABLE bookings MODIFY secondary_car_id INT UNSIGNED NULL');
+    }
+
     $driverIdColumn = schema_column($db, 'bookings', 'driver_id');
 
     if ($driverIdColumn !== null && strtoupper((string) ($driverIdColumn['Null'] ?? 'NO')) !== 'YES') {
         $db->query('ALTER TABLE bookings MODIFY driver_id INT UNSIGNED NULL');
+    }
+
+    if (!schema_index_exists($db, 'bookings', 'idx_bookings_secondary_car_id')) {
+        $db->query('ALTER TABLE bookings ADD INDEX idx_bookings_secondary_car_id (secondary_car_id)');
+    }
+
+    if (!schema_constraint_exists($db, 'bookings', 'fk_bookings_secondary_car')) {
+        $db->query(
+            'ALTER TABLE bookings
+             ADD CONSTRAINT fk_bookings_secondary_car
+             FOREIGN KEY (secondary_car_id) REFERENCES cars(id)
+             ON UPDATE CASCADE
+             ON DELETE SET NULL'
+        );
     }
 
     if (!schema_index_exists($db, 'bookings', 'idx_bookings_operator_id')) {
@@ -194,7 +215,8 @@ function ensure_schema(mysqli $db): void
         "INSERT INTO operators (full_name, operator_status)
          SELECT DISTINCT TRIM(operator_name), 'Active'
          FROM bookings
-         WHERE TRIM(COALESCE(operator_name, '')) <> ''
+         WHERE operator_id IS NULL
+           AND TRIM(COALESCE(operator_name, '')) <> ''
          ON DUPLICATE KEY UPDATE full_name = VALUES(full_name)"
     );
 

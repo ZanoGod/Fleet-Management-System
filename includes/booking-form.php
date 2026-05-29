@@ -62,7 +62,7 @@ $availableDrivers = array_filter($drivers, function($d) {
                     <div class="p-3 border rounded bg-light-subtle h-100">
                         <label class="form-label fw-bold mb-3 text-accent">2. Assign Resources</label>
                         <div class="mb-2">
-                            <label for="car_id" class="form-label small">Fleet Car</label>
+                            <label for="car_id" class="form-label small">Car Type 1</label>
                             <select class="form-select" id="car_id" name="car_id" required>
                                 <option value="">Select an available car</option>
                                 <?php foreach ($availableCars as $car): ?>
@@ -72,6 +72,19 @@ $availableDrivers = array_filter($drivers, function($d) {
                                     </option>
                                 <?php endforeach; ?>
                             </select>
+                        </div>
+                        <div class="mb-2">
+                            <label for="secondary_car_id" class="form-label small">Car Type 2</label>
+                            <select class="form-select" id="secondary_car_id" name="secondary_car_id">
+                                <option value="">Select if needed for even / odd</option>
+                                <?php foreach ($availableCars as $car): ?>
+                                    <?php $carLabel = trim($car['car_type'] . ' | ' . $car['plate_no'] . ' | ' . $car['model_name']); ?>
+                                    <option value="<?= e((string)$car['id']) ?>" data-original-text="<?= e($carLabel) ?>" <?= selected($booking['secondary_car_id'] ?? '', $car['id']) ?>>
+                                        <?= e($carLabel) ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                            <div class="form-text">Optional: use this when one driver needs two cars across the date range, such as even / odd rotation.</div>
                         </div>
                         <div>
                             <label for="driver_id" class="form-label small">Fleet Driver</label>
@@ -145,7 +158,14 @@ document.addEventListener('DOMContentLoaded', function() {
     const startDateInput = document.getElementById('start_date');
     const endDateInput = document.getElementById('end_date');
     const carSelect = document.getElementById('car_id');
+    const secondaryCarSelect = document.getElementById('secondary_car_id');
     const driverSelect = document.getElementById('driver_id');
+
+    if (!startDateInput || !endDateInput || !carSelect || !secondaryCarSelect || !driverSelect) {
+        return;
+    }
+
+    const carSelects = [carSelect, secondaryCarSelect].filter(Boolean);
 
     // Function to check if two date ranges overlap
     function checkOverlap(start1, end1, start2, end2) {
@@ -153,53 +173,110 @@ document.addEventListener('DOMContentLoaded', function() {
         return (start1 <= end2) && (end1 >= start2);
     }
 
+    function resetSelectOptions(selects) {
+        selects.forEach(select => {
+            [...select.options].forEach(opt => {
+                if (opt.value !== '') {
+                    opt.disabled = false;
+                    opt.text = opt.getAttribute('data-original-text');
+                }
+            });
+        });
+    }
+
+    function syncSelectedCars() {
+        if (!carSelect || !secondaryCarSelect) {
+            return;
+        }
+
+        const selectedPrimary = carSelect.value;
+        const selectedSecondary = secondaryCarSelect.value;
+
+        if (selectedPrimary !== '') {
+            const secondaryOption = secondaryCarSelect.querySelector(`option[value="${selectedPrimary}"]`);
+            if (secondaryOption && !secondaryOption.disabled) {
+                secondaryOption.disabled = true;
+                secondaryOption.text = secondaryOption.getAttribute('data-original-text') + ' (Already selected in Car Type 1)';
+            }
+        }
+
+        if (selectedSecondary !== '') {
+            const primaryOption = carSelect.querySelector(`option[value="${selectedSecondary}"]`);
+            if (primaryOption && !primaryOption.disabled) {
+                primaryOption.disabled = true;
+                primaryOption.text = primaryOption.getAttribute('data-original-text') + ' (Already selected in Car Type 2)';
+            }
+        }
+    }
+
     function filterResources() {
         const startDate = startDateInput.value;
         const endDate = endDateInput.value;
 
         // Reset all options to available first
-        [...carSelect.options, ...driverSelect.options].forEach(opt => {
-            if (opt.value !== '') {
-                opt.disabled = false;
-                opt.text = opt.getAttribute('data-original-text');
-            }
-        });
+        resetSelectOptions(carSelects);
+        resetSelectOptions([driverSelect]);
 
-        // If dates are empty, stop here
-        if (!startDate || !endDate) return;
+        if (startDate && endDate) {
+            // Loop through all active bookings from the database
+            activeBookings.forEach(booking => {
+                if (checkOverlap(startDate, endDate, booking.start_date, booking.end_date)) {
+                    [booking.car_id, booking.secondary_car_id].forEach(carId => {
+                        if (!carId) {
+                            return;
+                        }
 
-        // Loop through all active bookings from the database
-        activeBookings.forEach(booking => {
-            if (checkOverlap(startDate, endDate, booking.start_date, booking.end_date)) {
-                
-                // Disable overlapping Car
-                if (booking.car_id) {
-                    const carOpt = carSelect.querySelector(`option[value="${booking.car_id}"]`);
-                    if (carOpt) {
-                        carOpt.disabled = true;
-                        carOpt.text = carOpt.getAttribute('data-original-text') + ' (Booked)';
+                        carSelects.forEach(select => {
+                            const carOpt = select.querySelector(`option[value="${carId}"]`);
+                            if (carOpt) {
+                                carOpt.disabled = true;
+                                carOpt.text = carOpt.getAttribute('data-original-text') + ' (Booked)';
+                            }
+                        });
+                    });
+
+                    // Disable overlapping Driver
+                    if (booking.driver_id) {
+                        const drvOpt = driverSelect.querySelector(`option[value="${booking.driver_id}"]`);
+                        if (drvOpt) {
+                            drvOpt.disabled = true;
+                            drvOpt.text = drvOpt.getAttribute('data-original-text') + ' (Booked)';
+                        }
                     }
                 }
+            });
+        }
 
-                // Disable overlapping Driver
-                if (booking.driver_id) {
-                    const drvOpt = driverSelect.querySelector(`option[value="${booking.driver_id}"]`);
-                    if (drvOpt) {
-                        drvOpt.disabled = true;
-                        drvOpt.text = drvOpt.getAttribute('data-original-text') + ' (Booked)';
-                    }
-                }
-            }
-        });
+        syncSelectedCars();
 
         // If the user's currently selected item just became disabled, reset the dropdown
-        if (carSelect.options[carSelect.selectedIndex]?.disabled) carSelect.value = '';
-        if (driverSelect.options[driverSelect.selectedIndex]?.disabled) driverSelect.value = '';
+        let needsRefresh = false;
+
+        if (carSelect.options[carSelect.selectedIndex]?.disabled) {
+            carSelect.value = '';
+            needsRefresh = true;
+        }
+
+        if (secondaryCarSelect.options[secondaryCarSelect.selectedIndex]?.disabled) {
+            secondaryCarSelect.value = '';
+            needsRefresh = true;
+        }
+
+        if (driverSelect.options[driverSelect.selectedIndex]?.disabled) {
+            driverSelect.value = '';
+            needsRefresh = true;
+        }
+
+        if (needsRefresh) {
+            filterResources();
+        }
     }
 
     // Listen for date changes
     startDateInput.addEventListener('change', filterResources);
     endDateInput.addEventListener('change', filterResources);
+    carSelect.addEventListener('change', filterResources);
+    secondaryCarSelect.addEventListener('change', filterResources);
 
     // Run once on load in case dates are already filled
     filterResources();

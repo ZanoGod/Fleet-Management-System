@@ -109,6 +109,7 @@ function booking_statuses(): array
     return [
         'Pending',
         'Confirm',
+        'In Service',
         'Completed',
         'Cancelled',
     ];
@@ -391,20 +392,102 @@ function fetch_resource_booking_assignments(mysqli $db, string $resourceColumn):
     return $assignments;
 }
 
-function booking_car_display(array $booking): string
+function fetch_active_booking_resources(mysqli $db, ?int $excludeBookingId = null): array
 {
-    $customCarName = trim((string) ($booking['custom_car_name'] ?? ''));
+    $activeBookings = [];
+    $statuses = booking_assignment_statuses();
+    $placeholders = implode(', ', array_fill(0, count($statuses), '?'));
+    $sql = "SELECT
+                id,
+                car_id,
+                secondary_car_id,
+                driver_id,
+                start_date,
+                end_date
+            FROM bookings
+            WHERE status IN ({$placeholders})";
 
-    if ($customCarName !== '') {
-        return $customCarName;
+    if ($excludeBookingId !== null) {
+        $sql .= ' AND id != ?';
+    }
+
+    $sql .= ' ORDER BY start_date ASC, end_date ASC, id ASC';
+
+    $statement = $db->prepare($sql);
+
+    if (!$statement instanceof mysqli_stmt) {
+        return $activeBookings;
+    }
+
+    $types = str_repeat('s', count($statuses));
+    $params = $statuses;
+
+    if ($excludeBookingId !== null) {
+        $types .= 'i';
+        $params[] = $excludeBookingId;
+    }
+
+    bind_statement_params($statement, $types, $params);
+    $statement->execute();
+    $result = $statement->get_result();
+
+    while ($row = $result->fetch_assoc()) {
+        $activeBookings[] = $row;
+    }
+
+    $statement->close();
+
+    return $activeBookings;
+}
+
+function booking_car_label(
+    ?string $carType,
+    ?string $plateNo = null,
+    ?string $customCarName = null
+): string {
+    $customName = trim((string) $customCarName);
+
+    if ($customName !== '') {
+        return $customName;
     }
 
     $parts = array_values(array_filter([
-        trim((string) ($booking['car_type'] ?? '')),
-        trim((string) ($booking['plate_no'] ?? '')),
+        trim((string) $carType),
+        trim((string) $plateNo),
     ], static fn (?string $value): bool => $value !== null && $value !== ''));
 
     return $parts === [] ? '-' : implode(' | ', $parts);
+}
+
+function booking_car_entries(array $booking): array
+{
+    $entries = [];
+
+    $primaryCar = booking_car_label(
+        $booking['car_type'] ?? null,
+        $booking['plate_no'] ?? null,
+        $booking['custom_car_name'] ?? null
+    );
+
+    if ($primaryCar !== '-') {
+        $entries[] = $primaryCar;
+    }
+
+    $secondaryCar = booking_car_label(
+        $booking['secondary_car_type'] ?? null,
+        $booking['secondary_plate_no'] ?? null
+    );
+
+    if ($secondaryCar !== '-') {
+        $entries[] = $secondaryCar;
+    }
+
+    return $entries === [] ? ['-'] : $entries;
+}
+
+function booking_car_display(array $booking): string
+{
+    return implode(' / ', booking_car_entries($booking));
 }
 
 function booking_driver_display(array $booking): string

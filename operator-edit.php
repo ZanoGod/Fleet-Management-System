@@ -8,8 +8,9 @@ $activePage = 'operators';
 $pageTitle = 'Edit Operator';
 $pageSummary = 'Update operator details and availability.';
 $pageActions = '<a class="btn btn-shell" href="operators.php">All Operators</a>';
+
 $errors = [];
-$id = (int) ($_GET['id'] ?? 0);
+$id = (int) ($_POST['id'] ?? $_GET['id'] ?? 0);
 
 if ($id <= 0) {
     set_flash('danger', 'Invalid operator ID.');
@@ -23,7 +24,9 @@ if ($db === null) {
     return;
 }
 
-$statement = $db->prepare('SELECT * FROM operators WHERE id = ? LIMIT 1');
+$statement = $db->prepare(
+    'SELECT * FROM operators WHERE id = ? LIMIT 1'
+);
 
 if (!$statement instanceof mysqli_stmt) {
     set_flash('danger', 'Failed to load the operator record.');
@@ -32,8 +35,10 @@ if (!$statement instanceof mysqli_stmt) {
 
 $statement->bind_param('i', $id);
 $statement->execute();
+
 $result = $statement->get_result();
 $operator = $result->fetch_assoc();
+
 $statement->close();
 
 if ($operator === null) {
@@ -42,12 +47,13 @@ if ($operator === null) {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+
     $operator = [
         'id' => $id,
-        'full_name' => old($_POST, 'full_name'),
-        'phone_number' => old($_POST, 'phone_number'),
-        'operator_status' => old($_POST, 'operator_status', 'Active'),
-        'note' => old($_POST, 'note'),
+        'full_name' => trim((string) ($_POST['full_name'] ?? '')),
+        'phone_number' => trim((string) ($_POST['phone_number'] ?? '')),
+        'operator_status' => trim((string) ($_POST['operator_status'] ?? 'Active')),
+        'note' => trim((string) ($_POST['note'] ?? '')),
     ];
 
     foreach (['full_name', 'operator_status'] as $field) {
@@ -57,14 +63,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
-    if (!in_allowed_values($operator['operator_status'], operator_statuses())) {
+    if (!in_allowed_values(
+        $operator['operator_status'],
+        operator_statuses()
+    )) {
         $errors[] = 'Please choose a valid operator status.';
     }
 
     if ($errors === []) {
         $updateStatement = $db->prepare(
             'UPDATE operators
-             SET full_name = ?, phone_number = ?, operator_status = ?, note = ?
+             SET full_name = ?,
+                 phone_number = ?,
+                 operator_status = ?,
+                 note = ?
              WHERE id = ?'
         );
 
@@ -80,13 +92,58 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $id
             );
 
-            if ($updateStatement->execute()) {
-                $updateStatement->close();
-                set_flash('success', 'Operator updated successfully.');
-                redirect('operators.php');
+            try {
+                $db->begin_transaction();
+
+                if (!$updateStatement->execute()) {
+                    $errors[] = 'Unable to update the operator.';
+                } else {
+                    $syncStatement = $db->prepare(
+                        'UPDATE bookings
+                         SET operator_name = ?
+                         WHERE operator_id = ?'
+                    );
+
+                    if (!$syncStatement instanceof mysqli_stmt) {
+                        $errors[] = 'Failed to sync linked booking operators.';
+                    } else {
+                        $syncStatement->bind_param(
+                            'si',
+                            $operator['full_name'],
+                            $id
+                        );
+
+                        if (!$syncStatement->execute()) {
+                            $errors[] = 'Failed to sync linked booking operators.';
+                        }
+
+                        $syncStatement->close();
+                    }
+                }
+
+                if ($errors === []) {
+                    $db->commit();
+                    $updateStatement->close();
+
+                    set_flash(
+                        'success',
+                        'Operator updated successfully.'
+                    );
+
+                    redirect('operators.php');
+                }
+
+                $db->rollback();
+            } catch (mysqli_sql_exception $e) {
+                $db->rollback();
+
+                if ($e->getCode() === 1062) {
+                    $errors[] = 'The operator name already exists.';
+                } else {
+                    $errors[] = 'Database error: ' . $e->getMessage();
+                }
             }
 
-            $errors[] = 'Unable to update the operator. The operator name may already exist.';
             $updateStatement->close();
         }
     }
@@ -109,6 +166,8 @@ require __DIR__ . '/includes/messages.php';
 <?php
 $formTitle = 'Edit Operator';
 $submitLabel = 'Update Operator';
+$formAction = 'operator-edit.php?id=' . $id;
+
 require __DIR__ . '/includes/operator-form.php';
 require __DIR__ . '/includes/footer.php';
 ?>

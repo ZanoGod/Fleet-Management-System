@@ -65,15 +65,19 @@ function dashboard_fetch_recent_bookings(mysqli $db, int $limit = 6): array
             b.operator_name,
             b.custom_car_name,
             b.custom_driver_name,
+            b.secondary_car_id,
             b.start_date,
             b.end_date,
             b.status,
             c.car_type,
             c.plate_no,
+            c2.car_type AS secondary_car_type,
+            c2.plate_no AS secondary_plate_no,
             d.full_name AS driver_name,
             o.full_name AS operator_full_name
          FROM bookings AS b
          LEFT JOIN cars AS c ON c.id = b.car_id
+         LEFT JOIN cars AS c2 ON c2.id = b.secondary_car_id
          LEFT JOIN drivers AS d ON d.id = b.driver_id
          LEFT JOIN operators AS o ON o.id = b.operator_id
          ORDER BY b.id DESC
