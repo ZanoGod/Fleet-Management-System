@@ -143,11 +143,6 @@ require __DIR__ . '/includes/messages.php';
         <small>Ready to operate</small>
     </div>
     <div class="card-shell overview-card">
-        <span>In Service</span>
-        <strong><?= e((string) ($stats['in_service'] ?? 0)) ?></strong>
-        <small>Trips now in progress</small>
-    </div>
-    <div class="card-shell overview-card">
         <span>Completed</span>
         <strong><?= e((string) ($stats['completed'] ?? 0)) ?></strong>
         <small>Trips completed</small>

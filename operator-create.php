@@ -39,7 +39,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $errors[] = 'Database is not connected yet. Please import the SQL file and check config/database.php.';
     }
 
-    if ($errors === []) {
+    if ($errors === [] && $db !== null) {
         $statement = $db->prepare(
             'INSERT INTO operators
             (full_name, phone_number, operator_status, note)

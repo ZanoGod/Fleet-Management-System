@@ -46,7 +46,7 @@ if ($db instanceof mysqli) {
         $sql .= ' WHERE ' . implode(' AND ', $where);
     }
 
-    $sql .= ' ORDER BY full_name ASC';
+  $sql .= ' ORDER BY updated_at DESC, created_at DESC';
 
     $statement = $db->prepare($sql);
 
