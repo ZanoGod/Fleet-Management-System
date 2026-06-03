@@ -132,7 +132,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $carCheck = $db->prepare(
                 "SELECT start_date, end_date FROM bookings 
                  WHERE (car_id = ? OR secondary_car_id = ?) AND id != ?
-                 AND status IN ('Pending', 'Confirm', 'In Service') 
+                 AND status IN ('Pending', 'Confirm')
                  AND start_date <= ? AND end_date >= ?
                  LIMIT 1"
             );
@@ -153,7 +153,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $secondaryCarCheck = $db->prepare(
                 "SELECT start_date, end_date FROM bookings
                  WHERE (car_id = ? OR secondary_car_id = ?) AND id != ?
-                 AND status IN ('Pending', 'Confirm', 'In Service')
+                 AND status IN ('Pending', 'Confirm')
                  AND start_date <= ? AND end_date >= ?
                  LIMIT 1"
             );
@@ -175,7 +175,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $drvCheck = $db->prepare(
                 "SELECT start_date, end_date FROM bookings 
                  WHERE driver_id = ? AND id != ?
-                 AND status IN ('Pending', 'Confirm', 'In Service') 
+                 AND status IN ('Pending', 'Confirm')
                  AND start_date <= ? AND end_date >= ?
                  LIMIT 1"
             );

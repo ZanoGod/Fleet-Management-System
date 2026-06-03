@@ -147,7 +147,6 @@ CREATE TABLE bookings (
     status ENUM(
         'Pending',
         'Confirm',
-        'In Service',
         'Completed',
         'Cancelled'
     ) NOT NULL DEFAULT 'Pending',
@@ -371,6 +370,6 @@ INSERT INTO bookings (
     'Odd',
     '2026-03-05',
     '2026-03-07',
-    'In Service',
+    'Confirm',
     'Three-day guest movement support'
 );

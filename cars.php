@@ -43,7 +43,7 @@ if ($db instanceof mysqli) {
                 SELECT 1
                 FROM bookings AS booking_search
                 WHERE booking_search.car_id = cars.id
-                  AND booking_search.status IN (\'Pending\', \'Confirm\', \'In Service\')
+                  AND booking_search.status IN (\'Pending\', \'Confirm\')
                   AND booking_search.guest_company_name LIKE ?
             )
         )';

@@ -343,11 +343,6 @@ a {
     color: #8c4300;
 }
 
-.status-service {
-    background: rgba(255, 154, 0, 0.4);
-    color: #5f2900;
-}
-
 .status-completed {
     background: var(--cocoa);
     color: #fff4e7;

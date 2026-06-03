@@ -34,6 +34,6 @@ $summary = ($summary ?? []) + [
     <div class="card-shell overview-card">
         <span>Ongoing </span>
         <strong><?= e((string) $summary['active_bookings']) ?></strong>
-        <small>Confirmed or in-service bookings</small>
+        <small>Confirmed bookings not yet ended</small>
     </div>
 </section>

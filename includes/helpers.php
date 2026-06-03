@@ -100,7 +100,6 @@ function booking_assignment_statuses(): array
     return [
         'Pending',
         'Confirm',
-        'In Service',
     ];
 }
 
@@ -109,7 +108,6 @@ function booking_statuses(): array
     return [
         'Pending',
         'Confirm',
-        'In Service',
         'Completed',
         'Cancelled',
     ];
@@ -119,7 +117,6 @@ function status_badge_class(string $status): string
 {
     return match (strtolower($status)) {
         'confirm' => 'status-confirm',
-        'in service' => 'status-service',
         'completed' => 'status-completed',
         'cancelled' => 'status-cancelled',
         default => 'status-pending',

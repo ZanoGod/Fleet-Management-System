@@ -23,7 +23,6 @@ $stats = [
     'total' => 0,
     'pending' => 0,
     'confirmed' => 0,
-    'in_service' => 0,
     'completed' => 0,
     'cancelled' => 0,
 ];
@@ -111,7 +110,6 @@ if ($db instanceof mysqli) {
         COUNT(*) AS total,
         SUM(CASE WHEN status = 'Pending' THEN 1 ELSE 0 END) AS pending,
         SUM(CASE WHEN status = 'Confirm' THEN 1 ELSE 0 END) AS confirmed,
-        SUM(CASE WHEN status = 'In Service' THEN 1 ELSE 0 END) AS in_service,
         SUM(CASE WHEN status = 'Completed' THEN 1 ELSE 0 END) AS completed,
         SUM(CASE WHEN status = 'Cancelled' THEN 1 ELSE 0 END) AS cancelled
      FROM bookings"

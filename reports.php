@@ -8,6 +8,7 @@ $activePage = 'reports';
 $pageTitle = 'Reports';
 $pageSummary = 'Filter booking activity by custom date ranges and review operations at a glance.';
 $pageActions = '<a class="btn btn-shell" href="bookings.php">Open Bookings</a>';
+$pageStyles = ['assets/css/reports.css'];
 $flash = get_flash();
 
 // Simplified filters array
@@ -25,7 +26,6 @@ $reportSummary = [
     'total' => 0,
     'pending' => 0,
     'confirmed' => 0,
-    'in_service' => 0,
     'completed' => 0,
 ];
 $errors = [];
@@ -123,10 +123,6 @@ if ($db instanceof mysqli) {
                 $reportSummary['confirmed']++;
             }
 
-            if (($row['status'] ?? '') === 'In Service') {
-                $reportSummary['in_service']++;
-            }
-
             if (($row['status'] ?? '') === 'Completed') {
                 $reportSummary['completed']++;
             }
@@ -186,7 +182,7 @@ require __DIR__ . '/includes/messages.php';
         </div>
     </div>
 
-    <form method="get" action="reports.php#reportsResultsSection" class="filter-grid" style="grid-template-columns: 2fr 1fr 1fr auto;" data-preserve-scroll="reportsFiltersSection">
+    <form method="get" action="reports.php#reportsResultsSection" class="filter-grid report-filter-grid" data-preserve-scroll="reportsFiltersSection">
         <div>
             <label for="search" class="form-label">Search</label>
             <input type="text" class="form-control" id="search" name="search" value="<?= e($filters['search']) ?>" placeholder="Guest, car, operator, driver, remark">
@@ -205,6 +201,13 @@ require __DIR__ . '/includes/messages.php';
         </div>
     </form>
 </section>
+
+<div class="report-print-area" id="reportPrintableArea" data-report-title="Booking Report - <?= e($rangeLabel) ?>">
+    <div class="report-print-header">
+        <span>GSS Fleet Management</span>
+        <h2>Booking Report</h2>
+        <p><?= e($rangeLabel) ?> | Generated <?= e(date('d M Y H:i')) ?></p>
+    </div>
 
 <section class="overview-grid">
     <div class="card-shell overview-card overview-card-text">
@@ -228,11 +231,6 @@ require __DIR__ . '/includes/messages.php';
         <small>Ready to operate</small>
     </div>
     <div class="card-shell overview-card">
-        <span>In Service</span>
-        <strong><?= e((string) $reportSummary['in_service']) ?></strong>
-        <small>Trips running in this report</small>
-    </div>
-    <div class="card-shell overview-card">
         <span>Completed</span>
         <strong><?= e((string) $reportSummary['completed']) ?></strong>
         <small>Finished trips in this report</small>
@@ -245,20 +243,40 @@ require __DIR__ . '/includes/messages.php';
             <h2>Booking Report Results</h2>
             <p>Filtered booking records for <?= e($rangeLabel) ?>.</p>
         </div>
+        <div class="report-actions no-print">
+            <button type="button" class="btn btn-accent btn-sm" data-report-export="pdf" title="Open the print dialog and choose Save as PDF">
+                <i class="bi bi-file-earmark-pdf"></i>
+                Export PDF
+            </button>
+            <button type="button" class="btn btn-shell btn-sm" data-report-export="print">
+                <i class="bi bi-printer"></i>
+                Print
+            </button>
+        </div>
     </div>
 
-    <div class="table-full-content">
-        <table class="table data-table align-middle" style="width: 100%; white-space: normal;">
+    <div class="report-table-shell">
+        <table class="table data-table report-table align-middle">
+            <colgroup>
+                <col class="report-col-guest">
+                <col class="report-col-car">
+                <col class="report-col-operator">
+                <col class="report-col-driver">
+                <col class="report-col-even-odd">
+                <col class="report-col-dates">
+                <col class="report-col-status">
+                <col class="report-col-remark">
+            </colgroup>
             <thead>
                 <tr>
-                    <th style="width: 15%;">Guest / Company</th>
-                    <th style="width: 15%;">Car</th>
-                    <th style="width: 10%;">Operator</th>
-                    <th style="width: 15%;">Driver</th>
-                    <th style="width: 5%;">E/O</th>
-                    <th style="width: 10%;">Dates</th>
-                    <th style="width: 10%;">Status</th>
-                    <th style="width: 20%;">Remark</th>
+                    <th>Guest / Company</th>
+                    <th>Car</th>
+                    <th>Operator</th>
+                    <th>Driver</th>
+                    <th>E/O</th>
+                    <th>Dates</th>
+                    <th>Status</th>
+                    <th>Remark</th>
                 </tr>
             </thead>
             <tbody>
@@ -269,44 +287,44 @@ require __DIR__ . '/includes/messages.php';
                 <?php else: ?>
                     <?php foreach ($reportBookings as $booking): ?>
                         <tr>
-                            <td>
-                                <div class="fw-semibold text-wrap" style="line-height: 1.3; font-size: 1.05rem;">
+                            <td data-label="Guest / Company">
+                                <div class="report-guest">
                                     <?= e($booking['guest_company_name']) ?>
                                 </div>
                             </td>
-                            <td>
-                                <div class="d-flex flex-column align-items-start">
+                            <td data-label="Car">
+                                <div class="report-pill-list">
                                     <?php foreach (booking_car_entries($booking) as $carLabel): ?>
-                                        <span class="table-pill car-pill text-wrap text-start mb-1"><?= e($carLabel) ?></span>
+                                        <span class="table-pill car-pill report-pill"><?= e($carLabel) ?></span>
                                     <?php endforeach; ?>
                                 </div>
                             </td>
-                            <td>
-                                <span class="table-pill operator-pill text-wrap text-start" style="font-size: 0.85em;">
+                            <td data-label="Operator">
+                                <span class="table-pill operator-pill report-pill">
                                     <?= e(booking_operator_display($booking)) ?>
                                 </span>
                             </td>
-                            <td>
-                                <span class="table-pill driver-pill text-wrap text-start" style="font-size: 0.9em; line-height: 1.2;">
+                            <td data-label="Driver">
+                                <span class="table-pill driver-pill report-pill">
                                     <?= e(booking_driver_display($booking)) ?>
                                 </span>
                             </td>
-                            <td>
-                                <span style="color: var(--muted); font-size: 0.9em;"><?= e($booking['even_odd'] ?: '-') ?></span>
+                            <td data-label="E/O">
+                                <span class="report-even-odd"><?= e($booking['even_odd'] ?: '-') ?></span>
                             </td>
-                            <td>
-                                <div style="font-weight: 700; color: var(--cocoa); font-size: 0.95em; line-height: 1.2;">
+                            <td data-label="Dates">
+                                <div class="report-date-primary">
                                     <?= e(format_display_date($booking['start_date'])) ?>
                                 </div>
-                                <div class="soft-note" style="font-size: 0.85em; margin-top: 2px;">
+                                <div class="soft-note report-date-secondary">
                                     <?= e(format_display_date($booking['end_date'])) ?>
                                 </div>
                             </td>
-                            <td>
+                            <td data-label="Status">
                                 <span class="status-pill <?= e(status_badge_class($booking['status'])) ?>"><?= e($booking['status']) ?></span>
                             </td>
-                            <td>
-                                <div class="text-wrap text-muted" style="font-size: 0.85em; line-height: 1.4;">
+                            <td data-label="Remark">
+                                <div class="report-remark">
                                     <?= e($booking['remark'] ?: '-') ?>
                                 </div>
                             </td>
@@ -318,9 +336,7 @@ require __DIR__ . '/includes/messages.php';
     </div>
 </section>
 
-<br>
-
-<section class="mini-grid">
+<section class="mini-grid report-metrics-grid">
     <div class="card-shell stack-card">
         <div class="section-title">
             <div>
@@ -384,5 +400,6 @@ require __DIR__ . '/includes/messages.php';
         <?php endforeach; ?>
     </div>
 </section>
+</div>
 
 <?php require __DIR__ . '/includes/footer.php'; ?>

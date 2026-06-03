@@ -131,6 +131,36 @@ function schema_constraint_exists(mysqli $db, string $table, string $constraintN
     return $exists;
 }
 
+function ensure_booking_status_schema(mysqli $db): void
+{
+    $statusColumn = schema_column($db, 'bookings', 'status');
+
+    if ($statusColumn === null) {
+        return;
+    }
+
+    $removedStatus = 'In' . ' Service';
+    $columnType = (string) ($statusColumn['Type'] ?? '');
+
+    if (stripos($columnType, $removedStatus) === false) {
+        return;
+    }
+
+    $replacementStatus = 'Confirm';
+    $statement = $db->prepare('UPDATE bookings SET status = ? WHERE status = ?');
+
+    if ($statement instanceof mysqli_stmt) {
+        $statement->bind_param('ss', $replacementStatus, $removedStatus);
+        $statement->execute();
+        $statement->close();
+    }
+
+    $db->query(
+        "ALTER TABLE bookings
+         MODIFY status ENUM('Pending', 'Confirm', 'Completed', 'Cancelled') NOT NULL DEFAULT 'Pending'"
+    );
+}
+
 function ensure_schema(mysqli $db): void
 {
     $db->query(
@@ -164,6 +194,8 @@ function ensure_schema(mysqli $db): void
             $db->query($sql);
         }
     }
+
+    ensure_booking_status_schema($db);
 
     $carIdColumn = schema_column($db, 'bookings', 'car_id');
 

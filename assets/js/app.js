@@ -17,6 +17,10 @@ document.addEventListener("DOMContentLoaded", function () {
     "[data-fullscreen-target]",
   );
 
+  const reportExportButtons = document.querySelectorAll(
+    "[data-report-export]",
+  );
+
   const selectOrTypeInputs = document.querySelectorAll(
     "[data-select-or-type-input]",
   );
@@ -220,6 +224,59 @@ document.addEventListener("DOMContentLoaded", function () {
       }
     });
   });
+
+  /* =========================================================
+       REPORT EXPORTS
+    ========================================================= */
+
+  let reportOriginalTitle = "";
+
+  const cleanupReportExport = () => {
+    if (!body.classList.contains("report-exporting")) {
+      return;
+    }
+
+    body.classList.remove(
+      "report-exporting",
+      "report-export-pdf",
+      "report-export-print",
+    );
+
+    if (reportOriginalTitle !== "") {
+      document.title = reportOriginalTitle;
+      reportOriginalTitle = "";
+    }
+  };
+
+  const printReport = (mode) => {
+    const printableReport = document.getElementById("reportPrintableArea");
+
+    reportOriginalTitle = document.title;
+
+    if (printableReport) {
+      const reportTitle =
+        printableReport.getAttribute("data-report-title") || "Booking Report";
+
+      document.title =
+        mode === "pdf" ? `${reportTitle} - PDF` : `${reportTitle} - Print`;
+    }
+
+    body.classList.add(
+      "report-exporting",
+      mode === "pdf" ? "report-export-pdf" : "report-export-print",
+    );
+
+    window.print();
+    window.setTimeout(cleanupReportExport, 1200);
+  };
+
+  reportExportButtons.forEach((button) => {
+    button.addEventListener("click", () => {
+      printReport(button.getAttribute("data-report-export") || "print");
+    });
+  });
+
+  window.addEventListener("afterprint", cleanupReportExport);
 
   /* =========================================================
        FILTER SCROLL RESTORE
