@@ -6,7 +6,7 @@ final class Database
 {
     private const HOST = '127.0.0.1';
     private const PORT = 3306;
-    private const NAME = 'fleet_management';
+    private const NAME = 'fleet-beta';
   //      private const NAME = 'fleet-beta';
     private const USERNAME = 'root';
     private const PASSWORD = '';
