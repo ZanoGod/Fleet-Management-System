@@ -86,7 +86,7 @@ if ($db instanceof mysqli) {
         $sql .= ' WHERE ' . implode(' AND ', $where);
     }
 
-    $sql .= ' ORDER BY b.start_date DESC, b.id DESC';
+    $sql .= ' ORDER BY b.id DESC';
 
     $statement = $db->prepare($sql);
 
@@ -232,7 +232,7 @@ require __DIR__ . '/includes/messages.php';
                                         <?= e($guestName) ?>
                                     </div>
                                 </td>
-                                
+
                                 <td>
                                     <div class="booking-car">
                                         <?php foreach (booking_car_entries($booking) as $carLabel): ?>
@@ -240,15 +240,15 @@ require __DIR__ . '/includes/messages.php';
                                         <?php endforeach; ?>
                                     </div>
                                 </td>
-                                
+
                                 <td>
                                     <span class="table-pill operator-pill booking-operator-pill"><?= e($operatorDisplay) ?></span>
                                 </td>
-                                
+
                                 <td>
                                     <span class="booking-even-odd"><?= e($booking['even_odd'] ?: '-') ?></span>
                                 </td>
-                                
+
                                 <td>
                                     <div class="booking-date-primary">
                                         <?= e(format_display_date($booking['start_date'])) ?>
@@ -257,23 +257,23 @@ require __DIR__ . '/includes/messages.php';
                                         <?= e(format_display_date($booking['end_date'])) ?>
                                     </div>
                                 </td>
-                                
+
                                 <td>
                                     <span class="table-pill driver-pill booking-driver-pill">
                                         <?= e($driverDisplay) ?>
                                     </span>
                                 </td>
-                                
+
                                 <td>
                                     <span class="status-pill <?= e(status_badge_class($booking['status'])) ?>"><?= e($booking['status']) ?></span>
                                 </td>
-                                
+
                                 <td>
                                     <div class="booking-remark">
                                         <?= e($remarkText) ?>
                                     </div>
                                 </td>
-                                
+
                                 <td class="text-center">
                                     <div class="table-actions table-actions-compact">
                                         <a class="btn btn-sm btn-shell" href="edit.php?id=<?= e((string) $booking['id']) ?>">Edit</a>

@@ -19,7 +19,7 @@ if ($id <= 0 || $db === null) {
     redirect('bookings.php');
 }
 
-$cars = fetch_cars_for_select($db); 
+$cars = fetch_cars_for_select($db);
 $drivers = fetch_drivers_for_select($db);
 $operators = fetch_operators_for_select($db);
 $activeBookings = fetch_active_booking_resources($db, $id);
@@ -36,7 +36,7 @@ if (empty($oldBooking)) {
     redirect('bookings.php');
 }
 
-$booking = $oldBooking; 
+$booking = $oldBooking;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $booking = [
@@ -54,7 +54,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'remark'             => old($_POST, 'remark'),
     ];
 
-    foreach (['guest_company_name', 'car_id', 'driver_id', 'operator_id', 'start_date', 'end_date', 'status'] as $field) {
+    $requiredFields = [
+        'guest_company_name',
+        'operator_id',
+        'start_date',
+        'end_date',
+        'status'
+    ];
+
+    // Require car & driver only for Confirm
+    if ($booking['status'] === 'Confirm') {
+        $requiredFields[] = 'car_id';
+        $requiredFields[] = 'driver_id';
+    }
+
+    foreach ($requiredFields as $field) {
         if ($booking[$field] === '') {
             $errors[] = 'Please fill in all required fields.';
             break;
@@ -125,8 +139,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // ==========================================
     // DATE OVERLAP CHECKER (EDIT MODE)
     // ==========================================
-    if ($errors === [] && in_allowed_values($booking['status'], booking_assignment_statuses())) {
-        
+   if ($errors === [] && $booking['status'] === 'Confirm') {
+
         // 1. Check Car Overlap (IGNORE CURRENT BOOKING ID)
         if ($finalCarId !== null) {
             $carCheck = $db->prepare(
@@ -204,9 +218,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $emptyStr = '';
             $updateStatement->bind_param(
                 'sisiisissssssi',
-                $booking['guest_company_name'], $finalCarId, $emptyStr, $finalSecondaryCarId, $finalDriverId, $emptyStr,
-                $finalOperatorId, $booking['operator_name'], $booking['even_odd'],
-                $booking['start_date'], $booking['end_date'], $booking['status'], $booking['remark'], $id
+                $booking['guest_company_name'],
+                $finalCarId,
+                $emptyStr,
+                $finalSecondaryCarId,
+                $finalDriverId,
+                $emptyStr,
+                $finalOperatorId,
+                $booking['operator_name'],
+                $booking['even_odd'],
+                $booking['start_date'],
+                $booking['end_date'],
+                $booking['status'],
+                $booking['remark'],
+                $id
             );
 
             if ($updateStatement->execute()) {
