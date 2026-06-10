@@ -28,7 +28,7 @@ $booking = [
 ];
 
 if ($db instanceof mysqli) {
-    $cars = fetch_cars_for_select($db); 
+    $cars = fetch_cars_for_select($db);
     $drivers = fetch_drivers_for_select($db);
     $operators = fetch_operators_for_select($db);
     $activeBookings = fetch_active_booking_resources($db);
@@ -49,7 +49,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'remark'             => old($_POST, 'remark'),
     ];
 
-    foreach (['guest_company_name', 'car_id', 'driver_id', 'operator_id', 'start_date', 'end_date', 'status'] as $field) {
+    $requiredFields = [
+        'guest_company_name',
+        'operator_id',
+        'start_date',
+        'end_date',
+        'status'
+    ];
+
+    // Only require car & driver when status is Confirm
+    if ($booking['status'] === 'Confirm') {
+        $requiredFields[] = 'car_id';
+        $requiredFields[] = 'driver_id';
+    }
+
+    foreach ($requiredFields as $field) {
         if ($booking[$field] === '') {
             $errors[] = 'Please fill in all required fields.';
             break;
@@ -73,7 +87,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($booking['car_id'] !== '') {
         $cId = (int) $booking['car_id'];
         $matchedCar = find_row_by_id($cars, $cId);
-        
+
         if ($matchedCar === null) {
             $errors[] = 'Please choose a valid fleet car.';
         } elseif (strtolower($matchedCar['availability_status']) === 'maintenance') {
@@ -128,11 +142,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // BACKEND DATE OVERLAP CHECKER
     // ==========================================
     if (
+
         $errors === []
         && $db instanceof mysqli
-        && in_allowed_values($booking['status'], booking_assignment_statuses())
+        && $booking['status'] === 'Confirm'
     ) {
-        
+
         // 1. Check Car Overlap
         if ($finalCarId !== null) {
             $carCheck = $db->prepare(
@@ -210,9 +225,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $emptyStr = '';
             $statement->bind_param(
                 'sisiisissssss',
-                $booking['guest_company_name'], $finalCarId, $emptyStr, $finalSecondaryCarId, $finalDriverId, $emptyStr,
-                $finalOperatorId, $booking['operator_name'], $booking['even_odd'],
-                $booking['start_date'], $booking['end_date'], $booking['status'], $booking['remark']
+                $booking['guest_company_name'],
+                $finalCarId,
+                $emptyStr,
+                $finalSecondaryCarId,
+                $finalDriverId,
+                $emptyStr,
+                $finalOperatorId,
+                $booking['operator_name'],
+                $booking['even_odd'],
+                $booking['start_date'],
+                $booking['end_date'],
+                $booking['status'],
+                $booking['remark']
             );
 
             if ($statement->execute()) {
