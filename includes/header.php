@@ -21,6 +21,9 @@ if (is_string($pageStyles)) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= e($pageTitle) ?></title>
+    
+    <link rel="icon" type="image/png" sizes="32x32" href="assets/img/favicon.png">
+    <link rel="shortcut icon" href="assets/img/favicon.ico">
 
     <link rel="stylesheet" href="<?= e(asset_url('assets/vendor/bootstrap/bootstrap.min.css')) ?>">
 
