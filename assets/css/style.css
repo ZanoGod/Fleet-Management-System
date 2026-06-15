@@ -334,9 +334,11 @@ a {
 }
 
 .status-pending {
-    background: rgba(255, 217, 61, 0.38);
-    color: #7b4700;
+    background: #b04a2b;
+    color: #fffaf3;
+    font-weight: 700;
 }
+
 
 .status-confirm {
     background: rgba(255, 154, 0, 0.22);
