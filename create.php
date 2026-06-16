@@ -58,10 +58,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     ];
 
     // Only require car & driver when status is Confirm
-    if ($booking['status'] === 'Confirm') {
-        $requiredFields[] = 'car_id';
-        $requiredFields[] = 'driver_id';
-    }
+    // if ($booking['status'] === 'Confirm') {
+    //     $requiredFields[] = 'car_id';
+    //     $requiredFields[] = 'driver_id';
+    // }
 
     foreach ($requiredFields as $field) {
         if ($booking[$field] === '') {
@@ -69,6 +69,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             break;
         }
     }
+
 
     if ($booking['start_date'] !== '' && $booking['end_date'] !== '' && $booking['end_date'] < $booking['start_date']) {
         $errors[] = 'End date cannot be earlier than start date.';

@@ -63,10 +63,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     ];
 
     // Require car & driver only for Confirm
-    if ($booking['status'] === 'Confirm') {
-        $requiredFields[] = 'car_id';
-        $requiredFields[] = 'driver_id';
-    }
+    // if ($booking['status'] === 'Confirm') {
+    //     $requiredFields[] = 'car_id';
+    //     $requiredFields[] = 'driver_id';
+    // }
 
     foreach ($requiredFields as $field) {
         if ($booking[$field] === '') {

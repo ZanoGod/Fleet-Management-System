@@ -62,6 +62,7 @@ $availableDrivers = array_filter($drivers, function ($d) {
                 <div class="col-md-6">
                     <div class="p-3 border rounded bg-light-subtle h-100">
                         <label class="form-label fw-bold mb-3 text-accent">2. Assign Resources</label>
+                        
                         <div class="mb-2">
                             <label for="car_id" class="form-label small">Car Type 1</label>
                             <select class="form-select" id="car_id" name="car_id">
@@ -168,14 +169,13 @@ $availableDrivers = array_filter($drivers, function ($d) {
 
         const carSelects = [carSelect, secondaryCarSelect].filter(Boolean);
 
+
         const statusSelect = document.getElementById('status');
 
-
         function updateRequiredFields() {
-            const isConfirm = statusSelect.value === 'Confirm';
-
-            carSelect.required = isConfirm;
-            driverSelect.required = isConfirm;
+            // Car and Driver are always optional
+            carSelect.required = false;
+            driverSelect.required = false;
         }
 
         statusSelect.addEventListener('change', updateRequiredFields);
