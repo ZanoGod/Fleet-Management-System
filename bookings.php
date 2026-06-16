@@ -86,7 +86,11 @@ if ($db instanceof mysqli) {
         $sql .= ' WHERE ' . implode(' AND ', $where);
     }
 
+<<<<<<< HEAD
     $sql .= ' ORDER BY b.updated_at DESC';
+=======
+   $sql .= ' ORDER BY b.updated_at DESC';
+>>>>>>> d6f08dc5b311da7778b9a9a444510acd76ebbbf0
 
     $statement = $db->prepare($sql);
 
