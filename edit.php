@@ -47,7 +47,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'driver_id'          => old($_POST, 'driver_id'),
         'operator_id'        => old($_POST, 'operator_id'),
         'operator_name'      => '',
-        'even_odd'           => old($_POST, 'even_odd'),
+        'even_odd'           => old($_POST, 'even_odd') === '' ? null : old($_POST, 'even_odd'), // <--- UPDATED
         'start_date'         => old($_POST, 'start_date'),
         'end_date'           => old($_POST, 'end_date'),
         'status'             => old($_POST, 'status', 'Pending'),
@@ -57,6 +57,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $requiredFields = [
         'guest_company_name',
         'operator_id',
+        'even_odd',
         'start_date',
         'end_date',
         'status'
@@ -139,7 +140,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // ==========================================
     // DATE OVERLAP CHECKER (EDIT MODE)
     // ==========================================
-   if ($errors === [] && $booking['status'] === 'Confirm') {
+    if ($errors === [] && $booking['status'] === 'Confirm') {
 
         // 1. Check Car Overlap (IGNORE CURRENT BOOKING ID)
         if ($finalCarId !== null) {
