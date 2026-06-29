@@ -160,6 +160,73 @@ if ($db instanceof mysqli) {
     }
 }
 
+
+$carUtilization = [];
+
+if ($db instanceof mysqli && $errors === []) {
+
+    $sql = "
+    SELECT
+        c.id,
+        CONCAT(c.car_type,' (',c.plate_no,')') AS car_name,
+
+        COUNT(
+            CASE
+                WHEN b.car_id = c.id
+                OR b.secondary_car_id = c.id
+                THEN 1
+            END
+        ) AS total_bookings,
+
+        SUM(
+            CASE
+                WHEN b.car_id = c.id
+                OR b.secondary_car_id = c.id
+                THEN DATEDIFF(b.end_date,b.start_date)+1
+                ELSE 0
+            END
+        ) AS total_days
+
+    FROM cars c
+
+    LEFT JOIN bookings b
+        ON (
+            (b.car_id=c.id OR b.secondary_car_id=c.id)
+            AND b.start_date<=?
+            AND b.end_date>=?
+        )
+
+    GROUP BY c.id
+
+    ORDER BY total_bookings DESC
+    ";
+
+    $stmt = $db->prepare($sql);
+
+    $stmt->bind_param("ss", $dateTo, $dateFrom);
+
+    $stmt->execute();
+
+    $result = $stmt->get_result();
+
+    while ($row = $result->fetch_assoc()) {
+
+        $days = max(
+            1,
+            (strtotime($dateTo) - strtotime($dateFrom)) / 86400 + 1
+        );
+
+        $row['utilization'] = round(
+            ($row['total_days'] / $days) * 100,
+            1
+        );
+
+        $carUtilization[] = $row;
+    }
+
+    $stmt->close();
+}
+
 require __DIR__ . '/includes/header.php';
 require __DIR__ . '/includes/messages.php';
 ?>
@@ -202,139 +269,6 @@ require __DIR__ . '/includes/messages.php';
     </form>
 </section>
 
-<div class="report-print-area" id="reportPrintableArea" data-report-title="Booking Report - <?= e($rangeLabel) ?>">
-    <div class="report-print-header">
-        <span>GSS Fleet Management</span>
-        <h2>Booking Report</h2>
-        <p><?= e($rangeLabel) ?> | Generated <?= e(date('d M Y H:i')) ?></p>
-    </div>
-
-<section class="overview-grid">
-    <div class="card-shell overview-card overview-card-text">
-        <span>Report Range</span>
-        <strong><?= e($rangeLabel) ?></strong>
-        <small>Current booking period</small>
-    </div>
-    <div class="card-shell overview-card">
-        <span>Total Bookings</span>
-        <strong><?= e((string) $reportSummary['total']) ?></strong>
-        <small>Bookings matching the filters</small>
-    </div>
-    <div class="card-shell overview-card">
-        <span>Pending</span>
-        <strong><?= e((string) $reportSummary['pending']) ?></strong>
-        <small>Awaiting confirmation</small>
-    </div>
-    <div class="card-shell overview-card">
-        <span>Confirmed</span>
-        <strong><?= e((string) $reportSummary['confirmed']) ?></strong>
-        <small>Ready to operate</small>
-    </div>
-    <div class="card-shell overview-card">
-        <span>Completed</span>
-        <strong><?= e((string) $reportSummary['completed']) ?></strong>
-        <small>Finished trips in this report</small>
-    </div>
-</section>
-
-<section class="card-shell section-card mt-4" id="reportsResultsSection">
-    <div class="section-title">
-        <div>
-            <h2>Booking Report Results</h2>
-            <p>Filtered booking records for <?= e($rangeLabel) ?>.</p>
-        </div>
-        <div class="report-actions no-print">
-            <button type="button" class="btn btn-accent btn-sm" data-report-export="pdf" title="Open the print dialog and choose Save as PDF">
-                <i class="bi bi-file-earmark-pdf"></i>
-                Export PDF
-            </button>
-            <button type="button" class="btn btn-shell btn-sm" data-report-export="print">
-                <i class="bi bi-printer"></i>
-                Print
-            </button>
-        </div>
-    </div>
-
-    <div class="report-table-shell">
-        <table class="table data-table report-table align-middle">
-            <colgroup>
-                <col class="report-col-guest">
-                <col class="report-col-car">
-                <col class="report-col-operator">
-                <col class="report-col-driver">
-                <col class="report-col-even-odd">
-                <col class="report-col-dates">
-                <col class="report-col-status">
-                <col class="report-col-remark">
-            </colgroup>
-            <thead>
-                <tr>
-                    <th>Guest / Company</th>
-                    <th>Car</th>
-                    <th>Operator</th>
-                    <th>Driver</th>
-                    <th>E/O</th>
-                    <th>Dates</th>
-                    <th>Status</th>
-                    <th>Remark</th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php if ($reportBookings === []): ?>
-                    <tr>
-                        <td colspan="8" class="text-center py-5 text-muted-soft">No bookings found for the selected report filters.</td>
-                    </tr>
-                <?php else: ?>
-                    <?php foreach ($reportBookings as $booking): ?>
-                        <tr>
-                            <td data-label="Guest / Company">
-                                <div class="report-guest">
-                                    <?= e($booking['guest_company_name']) ?>
-                                </div>
-                            </td>
-                            <td data-label="Car">
-                                <div class="report-pill-list">
-                                    <?php foreach (booking_car_entries($booking) as $carLabel): ?>
-                                        <span class="table-pill car-pill report-pill"><?= e($carLabel) ?></span>
-                                    <?php endforeach; ?>
-                                </div>
-                            </td>
-                            <td data-label="Operator">
-                                <span class="table-pill operator-pill report-pill">
-                                    <?= e(booking_operator_display($booking)) ?>
-                                </span>
-                            </td>
-                            <td data-label="Driver">
-                                <span class="table-pill driver-pill report-pill">
-                                    <?= e(booking_driver_display($booking)) ?>
-                                </span>
-                            </td>
-                            <td data-label="E/O">
-                                <span class="report-even-odd"><?= e($booking['even_odd'] ?: '-') ?></span>
-                            </td>
-                            <td data-label="Dates">
-                                <div class="report-date-primary">
-                                    <?= e(format_display_date($booking['start_date'])) ?>
-                                </div>
-                                <div class="soft-note report-date-secondary">
-                                    <?= e(format_display_date($booking['end_date'])) ?>
-                                </div>
-                            </td>
-                            <td data-label="Status">
-                                <span class="status-pill <?= e(status_badge_class($booking['status'])) ?>"><?= e($booking['status']) ?></span>
-                            </td>
-                            <td data-label="Remark">
-                                <div class="report-remark">
-                                    <?= e($booking['remark'] ?: '-') ?>
-                                </div>
-                            </td>
-                        </tr>
-                    <?php endforeach; ?>
-                <?php endif; ?>
-            </tbody>
-        </table>
-    </div>
-</section>
 
 <section class="mini-grid report-metrics-grid">
     <div class="card-shell stack-card">
@@ -358,48 +292,250 @@ require __DIR__ . '/includes/messages.php';
         <?php endforeach; ?>
     </div>
 
+    <!-- fleet utilization section -->
     <div class="card-shell stack-card">
+
         <div class="section-title">
             <div>
-                <h2>Fleet Availability Report</h2>
-                <p>Current fleet readiness across all cars.</p>
+                <h2>Fleet Utilization</h2>
+                <p>Most frequently used vehicles</p>
             </div>
         </div>
-        <?php $carTotal = max(1, array_sum($carStatusCounts)); ?>
-        <?php foreach ($carStatusCounts as $label => $count): ?>
+
+        <?php
+        $maxBookings = max(1, max(array_column($carUtilization, 'total_bookings')));
+        ?>
+
+        <?php foreach (array_slice($carUtilization, 0, 5) as $car): ?>
+
             <div class="metric-row">
+
                 <div>
-                    <strong><?= e($label) ?></strong>
+
+                    <strong><?= e($car['car_name']) ?></strong>
+
                     <div class="bar-track">
-                        <div class="bar-fill" style="width: <?= e((string) round(($count / $carTotal) * 100, 1)) ?>%"></div>
+
+                        <div
+                            class="bar-fill"
+                            style="width:<?= round(($car['total_bookings'] / $maxBookings) * 100) ?>%">
+                        </div>
+
                     </div>
+
                 </div>
-                <span><?= e((string) $count) ?></span>
+
+                <span>
+
+                    <?= $car['total_bookings'] ?> Trips
+
+                </span>
+
             </div>
+
         <?php endforeach; ?>
+
     </div>
 
+    <!--Fleet Pie Chart-->
     <div class="card-shell stack-card">
         <div class="section-title">
             <div>
-                <h2>Driver Availability Report</h2>
-                <p>Current driver availability across the full directory.</p>
+                <h2>Vehicle Distribution</h2>
+                <p>Booking share by vehicle</p>
             </div>
         </div>
-        <?php $driverTotal = max(1, array_sum($driverStatusCounts)); ?>
-        <?php foreach ($driverStatusCounts as $label => $count): ?>
-            <div class="metric-row">
-                <div>
-                    <strong><?= e($label) ?></strong>
-                    <div class="bar-track">
-                        <div class="bar-fill" style="width: <?= e((string) round(($count / $driverTotal) * 100, 1)) ?>%"></div>
-                    </div>
-                </div>
-                <span><?= e((string) $count) ?></span>
-            </div>
-        <?php endforeach; ?>
+
+        <div style="height:300px">
+            <canvas id="fleetPie"></canvas>
+        </div>
     </div>
+
 </section>
+
+<br>
+<div class="report-print-area" id="reportPrintableArea" data-report-title="Booking Report - <?= e($rangeLabel) ?>">
+    <div class="report-print-header">
+        <span>GSS Fleet Management</span>
+        <h2>Booking Report</h2>
+        <p><?= e($rangeLabel) ?> | Generated <?= e(date('d M Y H:i')) ?></p>
+    </div>
+
+    <section class="overview-grid">
+        <div class="card-shell overview-card overview-card-text">
+            <span>Report Range</span>
+            <strong><?= e($rangeLabel) ?></strong>
+            <small>Current booking period</small>
+        </div>
+        <div class="card-shell overview-card">
+            <span>Total Bookings</span>
+            <strong><?= e((string) $reportSummary['total']) ?></strong>
+            <small>Bookings matching the filters</small>
+        </div>
+        <div class="card-shell overview-card">
+            <span>Pending</span>
+            <strong><?= e((string) $reportSummary['pending']) ?></strong>
+            <small>Awaiting confirmation</small>
+        </div>
+        <div class="card-shell overview-card">
+            <span>Confirmed</span>
+            <strong><?= e((string) $reportSummary['confirmed']) ?></strong>
+            <small>Ready to operate</small>
+        </div>
+        <div class="card-shell overview-card">
+            <span>Completed</span>
+            <strong><?= e((string) $reportSummary['completed']) ?></strong>
+            <small>Finished trips in this report</small>
+        </div>
+    </section>
+
+    <section class="card-shell section-card mt-4" id="reportsResultsSection">
+        <div class="section-title">
+            <div>
+                <h2>Booking Report Results</h2>
+                <p>Filtered booking records for <?= e($rangeLabel) ?>.</p>
+            </div>
+            <div class="report-actions no-print">
+                <button type="button" class="btn btn-accent btn-sm" data-report-export="pdf" title="Open the print dialog and choose Save as PDF">
+                    <i class="bi bi-file-earmark-pdf"></i>
+                    Export PDF
+                </button>
+                <button type="button" class="btn btn-shell btn-sm" data-report-export="print">
+                    <i class="bi bi-printer"></i>
+                    Print
+                </button>
+            </div>
+        </div>
+
+        <div class="report-table-shell">
+            <table class="table data-table report-table align-middle">
+                <colgroup>
+                    <col class="report-col-guest">
+                    <col class="report-col-car">
+                    <col class="report-col-operator">
+                    <col class="report-col-driver">
+                    <col class="report-col-even-odd">
+                    <col class="report-col-dates">
+                    <col class="report-col-status">
+                    <col class="report-col-remark">
+                </colgroup>
+                <thead>
+                    <tr>
+                        <th>Guest / Company</th>
+                        <th>Car</th>
+                        <th>Operator</th>
+                        <th>Driver</th>
+                        <th>E/O</th>
+                        <th>Dates</th>
+                        <th>Status</th>
+                        <th>Remark</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php if ($reportBookings === []): ?>
+                        <tr>
+                            <td colspan="8" class="text-center py-5 text-muted-soft">No bookings found for the selected report filters.</td>
+                        </tr>
+                    <?php else: ?>
+                        <?php foreach ($reportBookings as $booking): ?>
+                            <tr>
+                                <td data-label="Guest / Company">
+                                    <div class="report-guest">
+                                        <?= e($booking['guest_company_name']) ?>
+                                    </div>
+                                </td>
+                                <td data-label="Car">
+                                    <div class="report-pill-list">
+                                        <?php foreach (booking_car_entries($booking) as $carLabel): ?>
+                                            <span class="table-pill car-pill report-pill"><?= e($carLabel) ?></span>
+                                        <?php endforeach; ?>
+                                    </div>
+                                </td>
+                                <td data-label="Operator">
+                                    <span class="table-pill operator-pill report-pill">
+                                        <?= e(booking_operator_display($booking)) ?>
+                                    </span>
+                                </td>
+                                <td data-label="Driver">
+                                    <span class="table-pill driver-pill report-pill">
+                                        <?= e(booking_driver_display($booking)) ?>
+                                    </span>
+                                </td>
+                                <td data-label="E/O">
+                                    <span class="report-even-odd"><?= e($booking['even_odd'] ?: '-') ?></span>
+                                </td>
+                                <td data-label="Dates">
+                                    <div class="report-date-primary">
+                                        <?= e(format_display_date($booking['start_date'])) ?>
+                                    </div>
+                                    <div class="soft-note report-date-secondary">
+                                        <?= e(format_display_date($booking['end_date'])) ?>
+                                    </div>
+                                </td>
+                                <td data-label="Status">
+                                    <span class="status-pill <?= e(status_badge_class($booking['status'])) ?>"><?= e($booking['status']) ?></span>
+                                </td>
+                                <td data-label="Remark">
+                                    <div class="report-remark">
+                                        <?= e($booking['remark'] ?: '-') ?>
+                                    </div>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+
+
 </div>
 
+
+<?php
+$topVehicles = array_slice($carUtilization, 0, 5);
+$fleetLabels = array_column($topVehicles, 'car_name');
+$fleetData   = array_column($topVehicles, 'total_bookings');
+
+?>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+
+        const ctx = document.getElementById("fleetPie");
+
+        if (!ctx) return;
+
+        const fleetLabels = <?= json_encode($fleetLabels) ?>;
+        const fleetData = <?= json_encode($fleetData) ?>;
+
+        new Chart(ctx, {
+            type: 'doughnut',
+
+            data: {
+                labels: fleetLabels,
+                datasets: [{
+                    data: fleetData,
+                    borderWidth: 2
+                }]
+            },
+
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+
+    });
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <?php require __DIR__ . '/includes/footer.php'; ?>
