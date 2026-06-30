@@ -337,6 +337,7 @@ require __DIR__ . '/includes/messages.php';
 
     </div>
 
+
     <!--Fleet Pie Chart-->
     <div class="card-shell stack-card">
         <div class="section-title">
@@ -511,6 +512,8 @@ $fleetData   = array_column($topVehicles, 'total_bookings');
         const fleetLabels = <?= json_encode($fleetLabels) ?>;
         const fleetData = <?= json_encode($fleetData) ?>;
 
+        Chart.register(ChartDataLabels);
+
         new Chart(ctx, {
             type: 'doughnut',
 
@@ -527,9 +530,39 @@ $fleetData   = array_column($topVehicles, 'total_bookings');
                 maintainAspectRatio: false,
 
                 plugins: {
+
                     legend: {
                         position: 'bottom'
+                    },
+
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const value = context.raw;
+                                const percent = ((value / total) * 100).toFixed(1);
+
+                                return `${value} Trips (${percent}%)`;
+                            }
+                        }
+                    },
+
+                    datalabels: {
+                        color: "#fff",
+
+                        font: {
+                            weight: "bold",
+                            size: 12
+                        },
+
+                        formatter: (value, context) => {
+                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            const percent = ((value / total) * 100).toFixed(1);
+
+                            return value + "\n" + percent + "%";
+                        }
                     }
+
                 }
             }
         });
@@ -538,4 +571,6 @@ $fleetData   = array_column($topVehicles, 'total_bookings');
 </script>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
+
 <?php require __DIR__ . '/includes/footer.php'; ?>

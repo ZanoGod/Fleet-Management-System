@@ -21,7 +21,7 @@ if (is_string($pageStyles)) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= e($pageTitle) ?></title>
-    
+
     <link rel="icon" type="image/png" sizes="32x32" href="assets/img/favicon.png">
     <link rel="shortcut icon" href="assets/img/favicon.ico">
 
@@ -32,6 +32,10 @@ if (is_string($pageStyles)) {
 
     <link rel="stylesheet" href="<?= e(asset_url('assets/css/style.css')) ?>">
     <link rel="stylesheet" href="<?= e(asset_url('assets/css/sidebar.css')) ?>">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@300..700&display=swap" rel="stylesheet">
 
     <?php foreach ($pageStyles as $stylesheet): ?>
         <link rel="stylesheet" href="<?= e(asset_url($stylesheet)) ?>">
