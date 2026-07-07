@@ -17,9 +17,7 @@ document.addEventListener("DOMContentLoaded", function () {
     "[data-fullscreen-target]",
   );
 
-  const reportExportButtons = document.querySelectorAll(
-    "[data-report-export]",
-  );
+  const reportExportButtons = document.querySelectorAll("[data-report-export]");
 
   const selectOrTypeInputs = document.querySelectorAll(
     "[data-select-or-type-input]",
@@ -338,6 +336,4 @@ document.addEventListener("DOMContentLoaded", function () {
 
     syncHiddenField();
   });
-
-
 });

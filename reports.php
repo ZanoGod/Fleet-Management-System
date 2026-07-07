@@ -489,8 +489,6 @@ require __DIR__ . '/includes/messages.php';
         </div>
     </section>
 
-
-
 </div>
 
 

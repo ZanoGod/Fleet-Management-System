@@ -44,6 +44,51 @@ if (is_string($pageStyles)) {
 
 <body>
 
+
+    <!-- Page Loading Transition -->
+    <div class="page-loader" id="pageLoader">
+
+        <div class="loader-progress"></div>
+
+<div class="skeleton-wrapper">
+
+    <div class="skeleton-header"></div>
+
+
+    <div class="skeleton-stats">
+
+        <div class="skeleton-card"></div>
+
+        <div class="skeleton-card"></div>
+
+        <div class="skeleton-card"></div>
+
+        <div class="skeleton-card"></div>
+
+    </div>
+
+
+
+    <div class="skeleton-table">
+
+        <div class="skeleton-table-title"></div>
+
+
+        <div class="skeleton-table-row"></div>
+
+        <div class="skeleton-table-row"></div>
+
+        <div class="skeleton-table-row"></div>
+
+        <div class="skeleton-table-row"></div>
+
+
+    </div>
+
+
+</div>
+
+    </div>
     <div class="sidebar-backdrop" data-sidebar-close></div>
 
     <div class="app-shell">

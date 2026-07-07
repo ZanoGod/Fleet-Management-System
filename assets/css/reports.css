@@ -2,6 +2,15 @@
    REPORTS
 ========================================================= */
 
+/* Inside reports.css */
+@media print {
+    html,
+    body {
+        /* This forces the background to white when printing */
+        background: #fff !important; 
+    }
+}
+
 .report-filter-grid {
     grid-template-columns: minmax(18rem, 2fr) repeat(2, minmax(12rem, 1fr)) auto;
 }
