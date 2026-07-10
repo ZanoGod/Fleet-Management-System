@@ -2,6 +2,200 @@
    REPORTS
 ========================================================= */
 
+.report-filter-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 1fr auto auto;
+    gap: 1rem;
+    align-items: end;
+}
+
+
+.spokes-loader{
+    display:none;
+    stroke:currentColor;
+    stroke-width:2;
+    stroke-linecap:round;
+}
+
+.btn-loading .spokes-loader{
+    display:inline-block;
+    margin-right:8px;
+    animation:spokes-spin .8s linear infinite;
+}
+
+.btn-loading i{
+    display:none;
+}
+
+@keyframes spokes-spin{
+    to{
+        transform:rotate(360deg);
+    }
+}
+
+.btn-accent-report {
+
+    position: relative;
+    overflow: hidden;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: .65rem;
+
+    padding: .72rem 1.35rem;
+
+    border-radius: 14px;
+    border: 1px solid rgba(79, 32, 13, .08);
+
+    background: linear-gradient(
+        180deg,
+        #fdd076d0 0%,
+        #f9ebd6 100%
+    );
+
+    color: var(--cocoa);
+
+    font-size: .92rem;
+    font-weight: 700;
+    text-decoration: none;
+
+    box-shadow:
+        0 8px 18px rgba(79, 32, 13, .08),
+        inset 0 1px 0 rgba(255,255,255,.9);
+
+    transition:
+        transform .30s ease,
+        box-shadow .30s ease,
+        color .30s ease,
+        border-color .30s ease;
+
+}
+
+/* Gold Hover Animation */
+
+.btn-accent-report::before {
+
+    content: "";
+
+    position: absolute;
+    inset: 0;
+
+    width: 0;
+
+    background: linear-gradient(
+        135deg,
+        var(--gold),
+        var(--amber)
+    );
+
+    transition: width .35s ease;
+
+    z-index: 0;
+
+}
+
+/* Premium Highlight */
+
+.btn-accent-report::after {
+
+    content: "";
+
+    position: absolute;
+
+    left: 12px;
+    right: 12px;
+    top: 1px;
+
+    height: 1px;
+
+    background: rgba(255,255,255,.75);
+
+    z-index: 1;
+
+}
+
+/* Keep Text Above Animation */
+
+.btn-accent-report span,
+.btn-accent-report i {
+
+    position: relative;
+    z-index: 2;
+
+    transition: all .25s ease;
+
+}
+
+/* Hover */
+
+.btn-accent-report:hover {
+
+    color: var(--cocoa);
+
+    transform: translateY(-3px);
+
+    border-color: rgba(255,185,0,.35);
+
+    box-shadow:
+        0 14px 28px rgba(255,170,0,.22);
+
+}
+
+.btn-accent-report:hover::before {
+
+    width: 100%;
+
+}
+
+.btn-accent-report:hover i {
+
+    transform: scale(1.12) rotate(-8deg);
+
+}
+
+.btn-accent-report:active {
+
+    transform: translateY(0);
+
+    box-shadow:
+        0 5px 12px rgba(79,32,13,.15);
+
+}
+
+/* ==========================================
+   Excel Button
+========================================== */
+
+.btn-excel i {
+
+    color: #217346;      /* Microsoft Excel Green */
+
+}
+
+.btn-excel:hover i {
+
+    color: #145A32;
+
+}
+
+/* ==========================================
+   PDF Button
+========================================== */
+
+.btn-pdf i {
+
+    color: #C62828;      /* Adobe PDF Red */
+
+}
+
+.btn-pdf:hover i {
+
+    color: #8E1C1C;
+
+}
+
+
 /* Inside reports.css */
 @media print {
     html,
@@ -9,10 +203,6 @@
         /* This forces the background to white when printing */
         background: #fff !important; 
     }
-}
-
-.report-filter-grid {
-    grid-template-columns: minmax(18rem, 2fr) repeat(2, minmax(12rem, 1fr)) auto;
 }
 
 .report-print-header {

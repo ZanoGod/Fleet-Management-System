@@ -7,16 +7,18 @@ require_once __DIR__ . '/includes/bootstrap.php';
 $activePage = 'reports';
 $pageTitle = 'Reports';
 $pageSummary = 'Filter booking activity by custom date ranges and review operations at a glance.';
-$pageActions = '<a class="btn btn-shell" href="bookings.php">Open Bookings</a>';
+$pageActions = '<a class="btn btn-accent" href="bookings.php">Open Bookings</a>';
 $pageStyles = ['assets/css/reports.css'];
 $flash = get_flash();
 
 // Simplified filters array
 $filters = [
     'search' => trim((string) ($_GET['search'] ?? '')),
+    'status' => trim((string) ($_GET['status'] ?? '')),
     'start_date' => trim((string) ($_GET['start_date'] ?? date('Y-m-01'))),
     'end_date' => trim((string) ($_GET['end_date'] ?? date('Y-m-t'))),
 ];
+
 
 $bookingStatusCounts = array_fill_keys(booking_statuses(), 0);
 $carStatusCounts = array_fill_keys(car_statuses(), 0);
@@ -64,13 +66,16 @@ if ($db instanceof mysqli) {
         $types .= 'ssssssssssss';
         array_push($params, $searchValue, $searchValue, $searchValue, $searchValue, $searchValue, $searchValue, $searchValue, $searchValue, $searchValue, $searchValue, $searchValue, $searchValue);
     }
-
+    if ($filters['status'] !== '') {
+        $where[] = 'b.status = ?';
+        $types .= 's';
+        $params[] = $filters['status'];
+    }
     if ($dateFrom !== null && $dateTo !== null && $errors === []) {
         $where[] = '(b.start_date <= ? AND b.end_date >= ?)';
         $types .= 'ss';
         array_push($params, $dateTo, $dateFrom);
     }
-
     $sql = "SELECT
                 b.id,
                 b.guest_company_name,
@@ -99,7 +104,7 @@ if ($db instanceof mysqli) {
         $sql .= ' WHERE ' . implode(' AND ', $where);
     }
 
-    $sql .= ' ORDER BY b.start_date DESC, b.id DESC';
+    $sql .= ' ORDER BY b.start_date ASC, b.id DESC';
 
     $statement = $db->prepare($sql);
 
@@ -157,6 +162,18 @@ if ($db instanceof mysqli) {
         while ($row = $driverStatusResult->fetch_assoc()) {
             $driverStatusCounts[$row['label']] = (int) $row['total'];
         }
+    }
+    $statsResult = $db->query(
+        "SELECT
+        COUNT(*) AS total,
+        SUM(CASE WHEN status = 'Pending' THEN 1 ELSE 0 END) AS pending,
+        SUM(CASE WHEN status = 'Confirm' THEN 1 ELSE 0 END) AS confirmed,
+        SUM(CASE WHEN status = 'Completed' THEN 1 ELSE 0 END) AS completed,
+        SUM(CASE WHEN status = 'Cancelled' THEN 1 ELSE 0 END) AS cancelled
+     FROM bookings"
+    );
+    if ($statsResult instanceof mysqli_result) {
+        $stats = array_merge($reportSummary, $statsResult->fetch_assoc() ?: []);
     }
 }
 
@@ -249,10 +266,25 @@ require __DIR__ . '/includes/messages.php';
         </div>
     </div>
 
-    <form method="get" action="reports.php#reportsResultsSection" class="filter-grid report-filter-grid" data-preserve-scroll="reportsFiltersSection">
+    <form method="get" action="reports.php#reportsResultsSection" class="report-filter-grid" data-preserve-scroll="reportsFiltersSection">
         <div>
             <label for="search" class="form-label">Search</label>
             <input type="text" class="form-control" id="search" name="search" value="<?= e($filters['search']) ?>" placeholder="Guest, car, operator, driver, remark">
+        </div>
+        <div>
+            <label for="status" class="form-label">Status</label>
+            <select class="form-select" id="status" name="status">
+                <option value="">All Statuses</option>
+
+                <?php foreach (booking_statuses() as $status): ?>
+                    <option
+                        value="<?= e($status) ?>"
+                        <?= selected($filters['status'], $status) ?>>
+                        <?= e($status) ?>
+                    </option>
+                <?php endforeach; ?>
+
+            </select>
         </div>
         <div>
             <label for="start_date" class="form-label">Start Date</label>
@@ -262,13 +294,15 @@ require __DIR__ . '/includes/messages.php';
             <label for="end_date" class="form-label">End Date</label>
             <input type="date" class="form-control" id="end_date" name="end_date" value="<?= e($filters['end_date']) ?>">
         </div>
-        <div class="d-grid align-self-end gap-2 d-md-flex">
-            <button type="submit" class="btn btn-shell flex-grow-1">Apply</button>
-            <a class="btn btn-outline-secondary" href="reports.php">Reset</a>
+        <div class="d-grid align-self-end">
+            <button type="submit" class="btn btn-shell">Apply</button>
+        </div>
+
+        <div class="d-grid align-self-end">
+            <a href="reports.php" class="btn btn-outline-secondary">Reset</a>
         </div>
     </form>
 </section>
-
 
 <section class="mini-grid report-metrics-grid">
     <div class="card-shell stack-card">
@@ -396,15 +430,45 @@ require __DIR__ . '/includes/messages.php';
                 <h2>Booking Report Results</h2>
                 <p>Filtered booking records for <?= e($rangeLabel) ?>.</p>
             </div>
-            <div class="report-actions no-print">
-                <button type="button" class="btn btn-accent btn-sm" data-report-export="pdf" title="Open the print dialog and choose Save as PDF">
-                    <i class="bi bi-file-earmark-pdf"></i>
-                    Export PDF
-                </button>
-                <button type="button" class="btn btn-shell btn-sm" data-report-export="print">
-                    <i class="bi bi-printer"></i>
-                    Print
-                </button>
+            <div class="report-actions">
+
+                <a href="includes/reports_export_excel.php?<?= http_build_query($_GET) ?>"
+                    id="exportExcelBtn"
+                    class="btn btn-accent-report btn-excel">
+                    <svg class="spokes-loader" viewBox="0 0 24 24" width="18" height="18">
+                        <g class="spokes">
+                            <line x1="12" y1="3" x2="12" y2="6" />
+                            <line x1="16.95" y1="5.05" x2="15.5" y2="6.5" />
+                            <line x1="21" y1="12" x2="18" y2="12" />
+                            <line x1="16.95" y1="18.95" x2="15.5" y2="17.5" />
+                            <line x1="12" y1="21" x2="12" y2="18" />
+                            <line x1="7.05" y1="18.95" x2="8.5" y2="17.5" />
+                            <line x1="3" y1="12" x2="6" y2="12" />
+                            <line x1="7.05" y1="5.05" x2="8.5" y2="6.5" />
+                        </g>
+                    </svg>
+                    <i class="bi bi-file-earmark-excel-fill"></i>
+                    <span>Export Excel</span>
+                </a>
+
+                <a href="includes/reports_export_pdf.php?<?= http_build_query($_GET) ?>"
+                    id="exportPdfBtn"
+                    class="btn btn-accent-report btn-pdf">
+                    <svg class="spokes-loader" viewBox="0 0 24 24" width="18" height="18">
+                        <g class="spokes">
+                            <line x1="12" y1="3" x2="12" y2="6" />
+                            <line x1="16.95" y1="5.05" x2="15.5" y2="6.5" />
+                            <line x1="21" y1="12" x2="18" y2="12" />
+                            <line x1="16.95" y1="18.95" x2="15.5" y2="17.5" />
+                            <line x1="12" y1="21" x2="12" y2="18" />
+                            <line x1="7.05" y1="18.95" x2="8.5" y2="17.5" />
+                            <line x1="3" y1="12" x2="6" y2="12" />
+                            <line x1="7.05" y1="5.05" x2="8.5" y2="6.5" />
+                        </g>
+                    </svg>
+                    <i class="bi bi-file-earmark-pdf-fill"></i>
+                    <span>Export PDF</span>
+                </a>
             </div>
         </div>
 
@@ -499,76 +563,106 @@ $fleetData   = array_column($topVehicles, 'total_bookings');
 
 ?>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
+</script>
 <script>
     document.addEventListener("DOMContentLoaded", function() {
 
         const ctx = document.getElementById("fleetPie");
 
-        if (!ctx) return;
+        if (ctx) {
 
-        const fleetLabels = <?= json_encode($fleetLabels) ?>;
-        const fleetData = <?= json_encode($fleetData) ?>;
+            const fleetLabels = <?= json_encode($fleetLabels) ?>;
+            const fleetData = <?= json_encode($fleetData) ?>;
 
-        Chart.register(ChartDataLabels);
+            Chart.register(ChartDataLabels);
 
-        new Chart(ctx, {
-            type: 'doughnut',
-
-            data: {
-                labels: fleetLabels,
-                datasets: [{
-                    data: fleetData,
-                    borderWidth: 2
-                }]
-            },
-
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-
-                plugins: {
-
-                    legend: {
-                        position: 'bottom'
-                    },
-
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: fleetLabels,
+                    datasets: [{
+                        data: fleetData,
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    const value = context.raw;
+                                    const percent = ((value / total) * 100).toFixed(1);
+                                    return `${value} Trips (${percent}%)`;
+                                }
+                            }
+                        },
+                        datalabels: {
+                            color: "#fff",
+                            font: {
+                                weight: "bold",
+                                size: 12
+                            },
+                            formatter: (value, context) => {
                                 const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                                const value = context.raw;
                                 const percent = ((value / total) * 100).toFixed(1);
-
-                                return `${value} Trips (${percent}%)`;
+                                return value + "\n" + percent + "%";
                             }
                         }
-                    },
-
-                    datalabels: {
-                        color: "#fff",
-
-                        font: {
-                            weight: "bold",
-                            size: 12
-                        },
-
-                        formatter: (value, context) => {
-                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                            const percent = ((value / total) * 100).toFixed(1);
-
-                            return value + "\n" + percent + "%";
-                        }
                     }
-
                 }
-            }
+            });
+        }
+
+        // ===========================
+        // Export Button Loading Effect
+        // ===========================
+        function setLoading(button, text) {
+            button.classList.add("btn-loading");
+
+            const span = button.querySelector("span");
+            const original = span.textContent;
+
+            span.textContent = text;
+
+            setTimeout(() => {
+                button.classList.remove("btn-loading");
+                span.textContent = original;
+            }, 3000);
+        }
+
+        document.getElementById("exportPdfBtn")?.addEventListener("click", function(e) {
+            e.preventDefault();
+
+            setLoading(this, "Generating...");
+
+            const url = this.href;
+
+            setTimeout(() => {
+                window.location.href = url;
+            }, 100);
         });
+
+        document.getElementById("exportExcelBtn")?.addEventListener("click", function(e) {
+            e.preventDefault();
+
+            setLoading(this, "Exporting...");
+
+            const url = this.href;
+
+            setTimeout(() => {
+                window.location.href = url;
+            }, 100);
+        });
+
 
     });
 </script>
-
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
 
 <?php require __DIR__ . '/includes/footer.php'; ?>
