@@ -1,7 +1,8 @@
 <?php
 require_once __DIR__ . '/includes/bootstrap.php';
 
-// If already logged in
+
+// If already logged in, send them straight to the dashboard
 if (!empty($_SESSION['admin_logged_in'])) {
     header('Location: index.php');
     exit;
@@ -11,21 +12,28 @@ $error = '';
 $username = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-
+    // Trim both fields to eliminate accidental spaces or newline characters
     $username = trim($_POST['username'] ?? '');
-    $password = $_POST['password'] ?? '';
+    $password = trim($_POST['password'] ?? '');
 
-    // Demo credentials
-    if ($username === 'admin' && $password === 'admin123') {
+    // Strict, clean comparison for credentials
+if ($username === 'admin' && $password === 'admin123') {
 
-        $_SESSION['admin_logged_in'] = true;
+    // Prevent session fixation
+    session_regenerate_id(true);
 
-        header('Location: index.php');
-        exit;
-    }
+    $_SESSION['admin_logged_in'] = true;
+
+    // Save browser fingerprint
+    $_SESSION['user_agent'] = $_SERVER['HTTP_USER_AGENT'] ?? '';
+
+    header('Location: index.php');
+    exit;
+}
 
     $error = 'Invalid username or password.';
 }
+
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -140,7 +148,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             color: #8c8178;
 
             font-size: .95rem;
-            font-weight: 400;
+            font-weight: 500;
         }
 
         .form-label-modern {
@@ -149,7 +157,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             margin-bottom: .55rem;
 
             font-size: .85rem;
-            font-weight: 500;
+            font-weight: 600;
 
             color: #7c7c7c;
         }
@@ -188,7 +196,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             background: rgba(255, 255, 255, .95);
 
             font-size: .95rem;
-            font-weight: 400;
+            font-weight: 500;
 
             color: #444;
 

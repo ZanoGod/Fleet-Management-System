@@ -7,7 +7,7 @@ require_once __DIR__ . '/includes/bootstrap.php';
 $activePage = 'cars';
 $pageTitle = 'Add Car';
 $pageSummary = 'Create a new fleet vehicle record.';
-$pageActions = '<a class="btn btn-shell" href="cars.php">All Cars</a>';
+$pageActions = '<a class="btn btn-shell" href="cars.php">View Cars</a>';
 $errors = [];
 $car = [
     'car_type' => '',

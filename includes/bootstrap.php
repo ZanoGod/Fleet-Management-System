@@ -12,7 +12,13 @@ if (is_dir($sessionPath) && is_writable($sessionPath)) {
     session_save_path($sessionPath);
 }
 
-session_start();
+// HARDENING: Inject secure directives before starting the session
+session_start([
+    'cookie_lifetime' => 0,                      // Ends when the browser closes
+    'cookie_secure'   => isset($_SERVER['HTTPS']),// True if running on HTTPS
+    'cookie_httponly' => true,                   // Blocks JavaScript cookie theft (XSS mitigation)
+    'cookie_samesite' => 'Strict'                 // Blocks CSRF context requests
+]);
 
 // ==========================================
 // NEW: SYSTEM SECURITY & AUTHENTICATION
@@ -23,6 +29,17 @@ $currentPage = basename($_SERVER['PHP_SELF']);
 if (empty($_SESSION['admin_logged_in']) && $currentPage !== 'login.php') {
     header('Location: login.php');
     exit;
+}
+
+// Check if user agent unexpectedly changes mid-session
+if (isset($_SESSION['admin_logged_in'])) {
+    if (!isset($_SESSION['user_agent']) || $_SESSION['user_agent'] !== $_SERVER['HTTP_USER_AGENT']) {
+        // Clear session and force re-login
+        $_SESSION = [];
+        session_destroy();
+        header('Location: login.php');
+        exit;
+    }
 }
 // ==========================================
 
