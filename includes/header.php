@@ -7,7 +7,11 @@ $pageSummary = $pageSummary ?? 'Manage fleet operations from one place.';
 $activePage = $activePage ?? 'dashboard';
 $pageActions = $pageActions ?? '';
 $pageStyles = $pageStyles ?? [];
-$navigationItems = app_navigation();
+$navigationItems = $navigationItems ?? app_navigation();
+$sidebarKicker = $sidebarKicker ?? 'v1.0';
+$sidebarTitle = $sidebarTitle ?? 'Fleet Management';
+$sidebarBrandMark = $sidebarBrandMark ?? 'GSS';
+$pageKicker = $pageKicker ?? 'Web-Based Fleet Management System';
 
 if (is_string($pageStyles)) {
     $pageStyles = [$pageStyles];
@@ -107,15 +111,15 @@ if (is_string($pageStyles)) {
                         data-sidebar-desktop-toggle
                         aria-label="Expand Sidebar">
 
-                        <span class="brand-mark-text">GSS</span>
+                        <span class="brand-mark-text"><?= e($sidebarBrandMark) ?></span>
 
                         <i class="bi bi-chevron-right brand-expand-icon"></i>
 
                     </button>
 
                     <div class="sidebar-brand-copy">
-                        <span class="sidebar-kicker">v1.0</span>
-                        <h2>Fleet Management</h2>
+                        <span class="sidebar-kicker"><?= e($sidebarKicker) ?></span>
+                        <h2><?= e($sidebarTitle) ?></h2>
                     </div>
 
                 </div>
@@ -216,7 +220,7 @@ if (is_string($pageStyles)) {
 
                     <div>
                         <div class="page-kicker">
-                            Web-Based Fleet Management System
+                            <?= e($pageKicker) ?>
                         </div>
 
                         <h1><?= e($pageTitle) ?></h1>

@@ -5,6 +5,15 @@ declare(strict_types=1);
 $driver = $driver ?? [];
 $submitLabel = $submitLabel ?? 'Save Driver';
 $formTitle = $formTitle ?? 'Driver Form';
+$backUrl = $backUrl ?? 'drivers.php';
+$backLabel = $backLabel ?? 'Back to Drivers';
+$cancelLabel = $cancelLabel ?? 'Cancel';
+$formLead = $formLead ?? 'Keep driver information ready for fast trip assignments.';
+$showAssignmentNote = $showAssignmentNote ?? true;
+$assignmentNoteTitle = $assignmentNoteTitle ?? 'Booking dates stay in Bookings.';
+$assignmentNoteBody = $assignmentNoteBody ?? 'Guest/company, start date, and end date are linked from booking records automatically, so update those details from';
+$assignmentNoteLinkUrl = $assignmentNoteLinkUrl ?? 'bookings.php';
+$assignmentNoteLinkText = $assignmentNoteLinkText ?? 'Bookings';
 ?>
 
 <div class="card-shell form-card">
@@ -12,15 +21,17 @@ $formTitle = $formTitle ?? 'Driver Form';
         <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
             <div>
                 <h1 class="h3 mb-1"><?= e($formTitle) ?></h1>
-                <p class="text-muted-soft mb-0">Keep driver information ready for fast trip assignments.</p>
+                <p class="text-muted-soft mb-0"><?= e($formLead) ?></p>
             </div>
-            <a class="btn btn-shell" href="drivers.php">Back to Drivers</a>
+            <a class="btn btn-shell" href="<?= e($backUrl) ?>"><?= e($backLabel) ?></a>
         </div>
 
-        <div class="form-assignment-note mb-4">
-            <strong>Booking dates stay in Bookings.</strong>
-            Guest/company, start date, and end date are linked from booking records automatically, so update those details from <a href="bookings.php">Bookings</a> instead of the driver master record.
-        </div>
+        <?php if ($showAssignmentNote): ?>
+            <div class="form-assignment-note mb-4">
+                <strong><?= e($assignmentNoteTitle) ?></strong>
+                <?= e($assignmentNoteBody) ?> <a href="<?= e($assignmentNoteLinkUrl) ?>"><?= e($assignmentNoteLinkText) ?></a> instead of the driver master record.
+            </div>
+        <?php endif; ?>
 
         <form method="post" class="row g-3">
             <div class="col-md-6">
@@ -51,7 +62,7 @@ $formTitle = $formTitle ?? 'Driver Form';
 
             <div class="col-12 d-flex flex-wrap gap-2 pt-2">
                 <button type="submit" class="btn btn-accent px-4"><?= e($submitLabel) ?></button>
-                <a class="btn btn-shell" href="drivers.php">Cancel</a>
+                <a class="btn btn-shell" href="<?= e($backUrl) ?>"><?= e($cancelLabel) ?></a>
             </div>
         </form>
     </div>

@@ -46,6 +46,28 @@ function get_flash(): ?array
     return $flash;
 }
 
+function csrf_token(): string
+{
+    if (empty($_SESSION['csrf_token']) || !is_string($_SESSION['csrf_token'])) {
+        $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+    }
+
+    return $_SESSION['csrf_token'];
+}
+
+function csrf_field(): string
+{
+    return '<input type="hidden" name="csrf_token" value="' . e(csrf_token()) . '">';
+}
+
+function verify_csrf_token(?string $token): bool
+{
+    return is_string($token)
+        && isset($_SESSION['csrf_token'])
+        && is_string($_SESSION['csrf_token'])
+        && hash_equals($_SESSION['csrf_token'], $token);
+}
+
 function old(array $source, string $key, string $default = ''): string
 {
     return isset($source[$key]) ? trim((string) $source[$key]) : $default;
@@ -139,6 +161,7 @@ function car_statuses(): array
         'Available',
         'Assigned',
         'Maintenance',
+        'Inactive',
     ];
 }
 
@@ -157,6 +180,35 @@ function driver_statuses(): array
         'Assigned',
         'Leave',
         'Inactive',
+    ];
+}
+
+function monthly_contract_assignment_types(): array
+{
+    return [
+        'Customer Only',
+        'Vehicle Only',
+        'Vehicle and Driver',
+    ];
+}
+
+function monthly_contract_statuses(): array
+{
+    return [
+        'Draft',
+        'Active',
+        'Expired',
+        'Renewed',
+        'Cancelled',
+    ];
+}
+
+function monthly_contract_payment_statuses(): array
+{
+    return [
+        'Pending',
+        'Paid',
+        'Overdue',
     ];
 }
 
@@ -247,6 +299,42 @@ function app_navigation(): array
     ];
 }
 
+function monthly_contract_navigation(): array
+{
+    return [
+        [
+            'key' => 'monthly-contract-dashboard',
+            'label' => 'Dashboard',
+            'path' => 'monthly_contract/monthly-contracts.php',
+        ],
+        [
+            'key' => 'monthly-contract-cars',
+            'label' => 'Vehicles',
+            'path' => 'monthly_contract/contract-cars.php',
+        ],
+        [
+            'key' => 'monthly-contract-drivers',
+            'label' => 'Drivers',
+            'path' => 'monthly_contract/drivers.php',
+        ],
+        [
+            'key' => 'monthly-contract-customers',
+            'label' => 'Customers',
+            'path' => 'monthly_contract/customers.php',
+        ],
+        [
+            'key' => 'monthly-contract-operators',
+            'label' => 'Operators',
+            'path' => 'monthly_contract/contract_operators.php',
+        ],
+        [
+            'key' => 'monthly-contract-reports',
+            'label' => 'Reports',
+            'path' => 'monthly_contract/contract-reports.php',
+        ],
+    ];
+}
+
 function nav_is_active(string $activePage, string $expected): string
 {
     return $activePage === $expected ? 'is-active' : '';
@@ -278,6 +366,92 @@ function operator_status_class(string $status): string
         'active' => 'resource-available',
         default => 'resource-inactive',
     };
+}
+
+function monthly_contract_status_badge_class(string $status): string
+{
+    return match (strtolower($status)) {
+        'active' => 'status-confirm',
+        'expired' => 'status-pending',
+        'renewed' => 'status-completed',
+        'cancelled' => 'status-cancelled',
+        default => 'resource-maintenance',
+    };
+}
+
+function monthly_contract_payment_badge_class(string $status): string
+{
+    return match (strtolower($status)) {
+        'paid' => 'resource-available',
+        'overdue' => 'status-pending',
+        default => 'resource-assigned',
+    };
+}
+
+function monthly_contract_assignment_badge_class(string $assignmentType): string
+{
+    return match (strtolower($assignmentType)) {
+        'vehicle and driver' => 'resource-assigned',
+        'vehicle only' => 'resource-available',
+        default => 'resource-maintenance',
+    };
+}
+
+function monthly_contract_money(mixed $amount): string
+{
+    return number_format((float) $amount, 2);
+}
+
+function monthly_contract_vehicle_display(array $contract): string
+{
+    $parts = array_values(array_filter([
+        trim((string) ($contract['car_type'] ?? '')),
+        trim((string) ($contract['plate_no'] ?? '')),
+        trim((string) ($contract['model_name'] ?? '')),
+    ], static fn (?string $value): bool => $value !== null && $value !== ''));
+
+    return $parts === [] ? '-' : implode(' | ', $parts);
+}
+
+function monthly_contract_driver_display(array $contract): string
+{
+    $driverName = trim((string) ($contract['driver_name'] ?? ''));
+
+    return $driverName !== '' ? $driverName : '-';
+}
+
+function monthly_contract_operator_display(array $contract): string
+{
+    $operatorName = trim((string) ($contract['operator_full_name'] ?? $contract['operator_name'] ?? ''));
+
+    return $operatorName !== '' ? $operatorName : '-';
+}
+
+function monthly_contract_expiry_state(array $contract): string
+{
+    $status = strtolower((string) ($contract['status'] ?? ''));
+    $endDate = trim((string) ($contract['end_date'] ?? ''));
+
+    if ($endDate === '' || in_array($status, ['renewed', 'cancelled'], true)) {
+        return 'normal';
+    }
+
+    $today = new DateTimeImmutable('today');
+    $end = DateTimeImmutable::createFromFormat('Y-m-d', $endDate);
+
+    if (!$end instanceof DateTimeImmutable) {
+        return 'normal';
+    }
+
+    if ($end < $today) {
+        return 'expired';
+    }
+
+    if ($end <= $today->modify('+30 days')) {
+        return 'expiring';
+    }
+
+    return 'normal';
 }
 
 
@@ -320,6 +494,82 @@ function fetch_drivers_for_select(mysqli $db): array
     }
 
     return $drivers;
+}
+
+function fetch_monthly_cars_for_select(mysqli $db, bool $availableOnly = false): array
+{
+    $cars = [];
+    $sql = 'SELECT id, car_type, plate_no, model_name, availability_status FROM monthly_cars';
+
+    if ($availableOnly) {
+        $sql .= " WHERE availability_status = 'Available'";
+    }
+
+    $sql .= ' ORDER BY car_type ASC, plate_no ASC';
+    $result = $db->query($sql);
+
+    if ($result instanceof mysqli_result) {
+        while ($row = $result->fetch_assoc()) {
+            $cars[] = $row;
+        }
+    }
+
+    return $cars;
+}
+
+function fetch_monthly_drivers_for_select(mysqli $db): array
+{
+    $drivers = [];
+    $result = $db->query(
+        'SELECT id, full_name, phone_number, driver_status
+         FROM monthly_drivers
+         ORDER BY full_name ASC'
+    );
+
+    if ($result instanceof mysqli_result) {
+        while ($row = $result->fetch_assoc()) {
+            $drivers[] = $row;
+        }
+    }
+
+    return $drivers;
+}
+
+function fetch_monthly_contract_resource_assignments(mysqli $db, string $resourceColumn): array
+{
+    if (!in_array($resourceColumn, ['car_id', 'driver_id'], true)) {
+        return [];
+    }
+
+    $assignments = [];
+    $sql = "SELECT
+                {$resourceColumn} AS resource_id,
+                contract_no,
+                customer_name,
+                start_date,
+                end_date
+            FROM monthly_contracts
+            WHERE {$resourceColumn} IS NOT NULL
+              AND status IN ('Draft', 'Active')
+            ORDER BY start_date ASC, end_date ASC, id ASC";
+    $result = $db->query($sql);
+
+    if (!$result instanceof mysqli_result) {
+        return [];
+    }
+
+    while ($row = $result->fetch_assoc()) {
+        $resourceId = (int) ($row['resource_id'] ?? 0);
+
+        if ($resourceId <= 0) {
+            continue;
+        }
+
+        unset($row['resource_id']);
+        $assignments[$resourceId][] = $row;
+    }
+
+    return $assignments;
 }
 
 function fetch_operators_for_select(mysqli $db, bool $activeOnly = false): array

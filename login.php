@@ -12,26 +12,70 @@ $error = '';
 $username = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // Trim both fields to eliminate accidental spaces or newline characters
-    $username = trim($_POST['username'] ?? '');
-    $password = trim($_POST['password'] ?? '');
+    $username = trim((string) ($_POST['username'] ?? ''));
+    $password = (string) ($_POST['password'] ?? '');
+    $csrfToken = (string) ($_POST['csrf_token'] ?? '');
 
-    // Strict, clean comparison for credentials
-if ($username === 'admin' && $password === 'admin123') {
+    if (!verify_csrf_token($csrfToken)) {
+        $error = 'Your login session expired. Please try again.';
+    } elseif ($username === '') {
+        $error = 'Please enter your username.';
+    } elseif (!($db instanceof mysqli)) {
+        $error = 'Database connection is not ready.';
+    } else {
+        $statement = $db->prepare(
+            'SELECT id, username, password_hash, is_active
+             FROM admins
+             WHERE username = ?
+             LIMIT 1'
+        );
 
-    // Prevent session fixation
-    session_regenerate_id(true);
+        if ($statement instanceof mysqli_stmt) {
+            $statement->bind_param('s', $username);
+            $statement->execute();
+            $admin = $statement->get_result()->fetch_assoc() ?: null;
+            $statement->close();
 
-    $_SESSION['admin_logged_in'] = true;
+            if (
+                is_array($admin)
+                && (int) ($admin['is_active'] ?? 0) === 1
+                && password_verify($password, (string) ($admin['password_hash'] ?? ''))
+            ) {
+                session_regenerate_id(true);
 
-    // Save browser fingerprint
-    $_SESSION['user_agent'] = $_SERVER['HTTP_USER_AGENT'] ?? '';
+                $_SESSION['admin_logged_in'] = true;
+                $_SESSION['admin_id'] = (int) $admin['id'];
+                $_SESSION['admin_username'] = (string) $admin['username'];
+                $_SESSION['user_agent'] = $_SERVER['HTTP_USER_AGENT'] ?? '';
 
-    header('Location: index.php');
-    exit;
-}
+                if (password_needs_rehash((string) $admin['password_hash'], PASSWORD_DEFAULT)) {
+                    $newHash = password_hash($password, PASSWORD_DEFAULT);
+                    $rehashStatement = $db->prepare('UPDATE admins SET password_hash = ? WHERE id = ?');
 
-    $error = 'Invalid username or password.';
+                    if ($rehashStatement instanceof mysqli_stmt) {
+                        $adminId = (int) $admin['id'];
+                        $rehashStatement->bind_param('si', $newHash, $adminId);
+                        $rehashStatement->execute();
+                        $rehashStatement->close();
+                    }
+                }
+
+                $loginStatement = $db->prepare('UPDATE admins SET last_login_at = NOW() WHERE id = ?');
+
+                if ($loginStatement instanceof mysqli_stmt) {
+                    $adminId = (int) $admin['id'];
+                    $loginStatement->bind_param('i', $adminId);
+                    $loginStatement->execute();
+                    $loginStatement->close();
+                }
+
+                header('Location: index.php');
+                exit;
+            }
+        }
+
+        $error = 'Invalid username or password.';
+    }
 }
 
 ?>
@@ -321,11 +365,12 @@ if ($username === 'admin' && $password === 'admin123') {
 
         <?php if (!empty($error)): ?>
             <div class="alert alert-danger">
-                <?= htmlspecialchars($error) ?>
+                <?= e($error) ?>
             </div>
         <?php endif; ?>
 
         <form method="post">
+            <?= csrf_field() ?>
 
             <div class="mb-4">
 
@@ -342,7 +387,7 @@ if ($username === 'admin' && $password === 'admin123') {
                         name="username"
                         class="form-control form-control-modern"
                         placeholder="Enter your username"
-                        value="<?= htmlspecialchars($username) ?>"
+                        value="<?= e($username) ?>"
                         autocomplete="username"
                         required>
 

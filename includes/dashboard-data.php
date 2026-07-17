@@ -12,6 +12,8 @@ function dashboard_default_state(): array
             'available_cars' => 0,
             'total_drivers' => 0,
             'available_drivers' => 0,
+            'total_contracts' => 0,
+            'expiring_contracts' => 0,
         ],
         'recentBookings' => [],
         'bookingStatusCounts' => array_fill_keys(booking_statuses(), 0),
@@ -43,7 +45,15 @@ function dashboard_fetch_summary(mysqli $db): array
 
             (SELECT COUNT(*) 
              FROM drivers 
-             WHERE driver_status = 'Available') AS available_drivers"
+             WHERE driver_status = 'Available') AS available_drivers,
+
+            (SELECT COUNT(*)
+             FROM monthly_contracts) AS total_contracts,
+
+            (SELECT COUNT(*)
+             FROM monthly_contracts
+             WHERE status NOT IN ('Renewed', 'Cancelled')
+             AND end_date BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 30 DAY)) AS expiring_contracts"
     );
 
     if (!$summaryResult instanceof mysqli_result) {

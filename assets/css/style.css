@@ -335,6 +335,16 @@ a {
   position: relative;
 }
 
+.overview-card-link {
+  color: inherit;
+  display: block;
+  text-decoration: none;
+}
+
+.overview-card-link:hover {
+  color: inherit;
+}
+
 .overview-card::before {
   content: "";
   position: absolute;
