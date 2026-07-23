@@ -2,17 +2,18 @@
 
 declare(strict_types=1);
 
-require_once __DIR__ . '/includes/bootstrap.php';
+require_once __DIR__ . '/../includes/bootstrap.php';
 
-$activePage = 'monthly-contract-cars';
+
+$activePage = 'contract-cars';
 $navigationItems = monthly_contract_navigation();
-$sidebarKicker = 'Module';
+$sidebarKicker = 'Fleet Management';
 $sidebarTitle = 'Monthly Contracts';
-$sidebarBrandMark = 'MC';
-$pageKicker = 'Monthly Contract Module';
-$pageTitle = 'Monthly Contract Vehicles';
+$sidebarBrandMark = 'GSS';
+$pageKicker = 'Monthly Contracts';
+$pageTitle = 'Vehicles';
 $pageSummary = 'Maintain vehicles reserved for monthly contracts separately from daily booking vehicles.';
-$pageActions = '<a class="btn btn-shell" href="index.php">Daily Booking</a> <a class="btn btn-accent" href="monthly-contract-car-create.php">Add Vehicle</a>';
+$pageActions = '<a class="btn btn-accent" href="car-create.php">Add Vehicle</a>';
 $pageStyles = ['assets/css/cars.css', 'assets/css/monthly-contracts.css'];
 $flash = get_flash();
 
@@ -108,8 +109,8 @@ if ($db instanceof mysqli) {
     }
 }
 
-require __DIR__ . '/includes/header.php';
-require __DIR__ . '/includes/messages.php';
+require __DIR__ . '/../includes/header.php';
+require __DIR__ . '/../includes/messages.php';
 ?>
 
 <section class="overview-grid">
@@ -143,7 +144,7 @@ require __DIR__ . '/includes/messages.php';
         </div>
     </div>
 
-    <form method="get" action="monthly-contract-cars.php#monthlyCarsResultsSection" class="filter-grid" data-preserve-scroll="monthlyCarsFiltersSection">
+    <form method="get" action="contract_cars.php#monthlyCarsResultsSection" class="filter-grid" data-preserve-scroll="monthlyCarsFiltersSection">
         <div>
             <label for="search" class="form-label">Search</label>
             <input
@@ -265,10 +266,10 @@ require __DIR__ . '/includes/messages.php';
                             </td>
                             <td class="text-center">
                                 <div class="d-flex justify-content-center gap-2 flex-wrap">
-                                    <a class="btn btn-sm btn-shell" href="monthly-contract-car-edit.php?id=<?= e((string) $car['id']) ?>">Edit</a>
+                                    <a class="btn btn-sm btn-shell" href="car_edit.php?id=<?= e((string) $car['id']) ?>">Edit</a>
                                     <form
                                         method="post"
-                                        action="monthly-contract-car-delete.php?id=<?= e((string) $car['id']) ?>"
+                                        action="car_delete.php?id=<?= e((string) $car['id']) ?>"
                                         onsubmit="return confirm('Delete this monthly vehicle?');">
                                         <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
                                     </form>
@@ -282,4 +283,4 @@ require __DIR__ . '/includes/messages.php';
     </div>
 </section>
 
-<?php require __DIR__ . '/includes/footer.php'; ?>
+<?php require __DIR__ . '/../includes/footer.php'; ?>

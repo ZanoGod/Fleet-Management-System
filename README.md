@@ -1,3 +1,8 @@
+Need to fix the Dashboard-> table and data. entities .. and add view button.. 
+add customers to fix and to select.. 
+and need to fix the reports.. data entites..
+
+
 # Fleet Management System
 
 A web-based Fleet Management System developed using PHP, MySQL, Bootstrap 5, HTML, CSS, and JavaScript.

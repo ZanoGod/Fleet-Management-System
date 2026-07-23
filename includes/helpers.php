@@ -10,21 +10,47 @@ function e(?string $value): string
 function asset_url(string $path): string
 {
     $normalizedPath = ltrim(str_replace('\\', '/', $path), '/');
+
     $absolutePath = dirname(__DIR__) . DIRECTORY_SEPARATOR
         . str_replace('/', DIRECTORY_SEPARATOR, $normalizedPath);
 
-    if (!is_file($absolutePath)) {
-        return $normalizedPath;
+    $url = '/fleet-management/' . $normalizedPath;
+
+    if (is_file($absolutePath)) {
+        $url .= '?v=' . filemtime($absolutePath);
     }
 
-    return $normalizedPath . '?v=' . filemtime($absolutePath);
+    return $url;
 }
+
+
+function app_url(string $path = ''): string
+{
+    static $base = null;
+
+    if ($base === null) {
+        // e.g. /fleet-management/includes -> /fleet-management
+        $base = str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME']));
+
+        if (str_ends_with($base, '/includes')) {
+            $base = dirname($base);
+        }
+
+        $base = rtrim($base, '/');
+    }
+
+    return $base . '/' . ltrim($path, '/');
+}
+
+
 
 function redirect(string $path): never
 {
-    header('Location: ' . $path);
+    header('Location: ' . app_url($path));
     exit;
 }
+
+
 
 function set_flash(string $type, string $message): void
 {
@@ -97,7 +123,7 @@ function format_compact_date_range(?string $startDate, ?string $endDate): string
         $parts = array_values(array_filter([
             format_display_date($startDate),
             format_display_date($endDate),
-        ], static fn (string $value): bool => $value !== '-'));
+        ], static fn(string $value): bool => $value !== '-'));
 
         return $parts === [] ? '-' : implode(' - ', $parts);
     }
@@ -261,7 +287,7 @@ function app_navigation(): array
             'label' => 'Bookings',
             'path' => 'bookings.php',
             'description' => 'Trip assignments',
-           // 'icon' => 'BK',
+            // 'icon' => 'BK',
             'icon' => '<i class="bi bi-calendar-check-fill"></i>',
         ],
         [
@@ -269,7 +295,7 @@ function app_navigation(): array
             'label' => 'Cars / Vehicles',
             'path' => 'cars.php',
             'description' => 'Vehicle master data',
-          //  'icon' => 'CR',
+            //  'icon' => 'CR',
             'icon' => '<i class="bi bi-car-front-fill"></i>',
         ],
         [
@@ -277,15 +303,15 @@ function app_navigation(): array
             'label' => 'Drivers',
             'path' => 'drivers.php',
             'description' => 'Driver directory',
-           // 'icon' => 'DR',
-           'icon' => '<i class="bi bi-person-vcard-fill"></i>',
+            // 'icon' => 'DR',
+            'icon' => '<i class="bi bi-person-vcard-fill"></i>',
         ],
         [
             'key' => 'operators',
             'label' => 'Operators',
             'path' => 'operators.php',
             'description' => 'Operator directory',
-           // 'icon' => 'OP',
+            // 'icon' => 'OP',
             'icon' => '<i class="bi bi-headset"></i>',
         ],
         [
@@ -305,36 +331,41 @@ function monthly_contract_navigation(): array
         [
             'key' => 'monthly-contract-dashboard',
             'label' => 'Dashboard',
-            'path' => 'monthly_contract/monthly-contracts.php',
+            'path' => 'monthly-contracts.php',
+            'icon' => '<i class="bi bi-grid-1x2-fill"></i>',
         ],
         [
-            'key' => 'monthly-contract-cars',
+            'key' => 'contract-cars',
             'label' => 'Vehicles',
-            'path' => 'monthly_contract/contract-cars.php',
+            'path' => 'contract_cars.php',
+            'icon' => '<i class="bi bi-car-front-fill"></i>',
         ],
         [
-            'key' => 'monthly-contract-drivers',
+            'key' => 'monthly-drivers',
             'label' => 'Drivers',
-            'path' => 'monthly_contract/drivers.php',
+            'path' => 'drivers.php',
+            'icon' => '<i class="bi bi-person-vcard-fill"></i>',
         ],
         [
-            'key' => 'monthly-contract-customers',
+            'key' => 'monthly-customers',
             'label' => 'Customers',
-            'path' => 'monthly_contract/customers.php',
+            'path' => 'customers.php',
+            'icon' => '<span class="material-symbols-outlined">groups_2</span>',
         ],
         [
-            'key' => 'monthly-contract-operators',
+            'key' => 'monthly-operators',
             'label' => 'Operators',
-            'path' => 'monthly_contract/contract_operators.php',
+            'path' => 'contract_operators.php',
+            'icon' => '<i class="bi bi-headset"></i>',
         ],
         [
-            'key' => 'monthly-contract-reports',
+            'key' => 'monthly-reports',
             'label' => 'Reports',
-            'path' => 'monthly_contract/contract-reports.php',
+            'path' => 'contract-reports.php',
+            'icon' => '<i class="bi bi-bar-chart-fill"></i>',
         ],
     ];
 }
-
 function nav_is_active(string $activePage, string $expected): string
 {
     return $activePage === $expected ? 'is-active' : '';
@@ -399,7 +430,7 @@ function monthly_contract_assignment_badge_class(string $assignmentType): string
 
 function monthly_contract_money(mixed $amount): string
 {
-    return number_format((float) $amount, 2);
+    return number_format((float) $amount, 0);
 }
 
 function monthly_contract_vehicle_display(array $contract): string
@@ -408,7 +439,7 @@ function monthly_contract_vehicle_display(array $contract): string
         trim((string) ($contract['car_type'] ?? '')),
         trim((string) ($contract['plate_no'] ?? '')),
         trim((string) ($contract['model_name'] ?? '')),
-    ], static fn (?string $value): bool => $value !== null && $value !== ''));
+    ], static fn(?string $value): bool => $value !== null && $value !== ''));
 
     return $parts === [] ? '-' : implode(' | ', $parts);
 }
@@ -459,14 +490,14 @@ function fetch_cars_for_select(mysqli $db, bool $availableOnly = false): array
 {
     $cars = [];
     $sql = 'SELECT id, car_type, plate_no, model_name, availability_status FROM cars';
-    
+
     // If we only want available cars, append the WHERE clause
     if ($availableOnly) {
         $sql .= " WHERE availability_status = 'Available'";
     }
-    
+
     $sql .= ' ORDER BY car_type ASC, plate_no ASC';
-    
+
     $result = $db->query($sql);
 
     if ($result instanceof mysqli_result) {
@@ -701,7 +732,7 @@ function booking_car_label(
     $parts = array_values(array_filter([
         trim((string) $carType),
         trim((string) $plateNo),
-    ], static fn (?string $value): bool => $value !== null && $value !== ''));
+    ], static fn(?string $value): bool => $value !== null && $value !== ''));
 
     return $parts === [] ? '-' : implode(' | ', $parts);
 }

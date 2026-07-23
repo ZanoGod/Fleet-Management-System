@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-require_once __DIR__ . '/bootstrap.php';
+require_once __DIR__ . '/../includes/bootstrap.php';
 require_once __DIR__ . '/monthly-contracts-data.php';
 require_once __DIR__ . '/../vendor/autoload.php';
 

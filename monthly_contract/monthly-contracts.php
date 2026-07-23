@@ -3,18 +3,22 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/../includes/bootstrap.php';
-require_once __DIR__ . '/../includes/monthly-contracts-data.php';
+require_once __DIR__ . '/monthly-contracts-data.php';
 
 $activePage = 'monthly-contract-dashboard';
+$navigationType = 'monthly_contract';
 $navigationItems = monthly_contract_navigation();
-$sidebarKicker = 'Module';
+$sidebarKicker = 'Fleet Management';
 $sidebarTitle = 'Monthly Contracts';
-$sidebarBrandMark = 'MC';
-$pageKicker = 'Monthly Contract Module';
-$pageTitle = 'Monthly Contract Dashboard';
+$sidebarBrandMark = 'GSS';
+$pageKicker = 'Monthly Contracts';
+$pageTitle = 'Dashboard';
 $pageSummary = 'Manage monthly customer assignments, renewals, expiry alerts, and contract reporting.';
-$pageActions = '<a class="btn btn-shell" href="../      index.php">Daily Booking</a> <a class="btn btn-accent" href="monthly-contract-create.php">Add Contract</a>';
-$pageStyles = ['assets/css/reports.css', 'assets/css/monthly-contracts.css'];
+$pageActions = '<a class="btn btn-dashboard" href="../index.php">Daily Booking</a> <a class="btn btn-accent" href="contract_create.php">Add Contract</a>';
+$pageStyles = [
+    'assets/css/monthly-contracts.css',
+    'assets/css/reports.css',
+];
 $flash = get_flash();
 $filters = monthly_contract_filters($_GET);
 $page = max(1, (int) ($_GET['page'] ?? 1));
@@ -43,7 +47,7 @@ if ($db instanceof mysqli) {
 
 $filterQuery = array_filter(
     $filters,
-    static fn (string $value): bool => $value !== ''
+    static fn(string $value): bool => $value !== ''
 );
 
 $exportQuery = http_build_query($filterQuery);
@@ -75,12 +79,6 @@ require __DIR__ . '/../includes/messages.php';
         <span>Expired</span>
         <strong><?= e((string) ($stats['expired'] ?? 0)) ?></strong>
         <small>Need review or renewal</small>
-    </div>
-
-    <div class="card-shell overview-card">
-        <span>Monthly Revenue</span>
-        <strong><?= e(monthly_contract_money($stats['monthly_revenue'] ?? 0)) ?></strong>
-        <small>Active contract value</small>
     </div>
 </section>
 
@@ -118,6 +116,7 @@ require __DIR__ . '/../includes/messages.php';
             <h2>Search Contracts</h2>
             <p>Filter by customer, contract number, resource, status, payment, expiry, or date.</p>
         </div>
+
     </div>
 
     <form method="get" action="monthly-contracts.php#monthlyContractsResultsSection" class="monthly-contract-filter-grid">
@@ -197,14 +196,15 @@ require __DIR__ . '/../includes/messages.php';
             <h2>Contract List</h2>
             <p><?= e((string) $totalRecords) ?> contract records found.</p>
         </div>
+        <button type="button" class="btn btn-shell btn-sm" data-fullscreen-target="monthlyTable">Fullscreen Table</button>
 
         <div class="report-actions">
-            <a href="includes/monthly_contracts_export_excel.php<?= $exportQuery !== '' ? '?' . e($exportQuery) : '' ?>"
+            <a href="monthly_contracts_export_excel.php<?= $exportQuery !== '' ? '?' . e($exportQuery) : '' ?>"
                 class="btn btn-accent-report btn-excel">
                 <i class="bi bi-file-earmark-excel-fill"></i>
                 <span>Excel</span>
             </a>
-            <a href="includes/monthly_contracts_export_pdf.php<?= $exportQuery !== '' ? '?' . e($exportQuery) : '' ?>"
+            <a href="monthly_contracts_export_pdf.php<?= $exportQuery !== '' ? '?' . e($exportQuery) : '' ?>"
                 class="btn btn-accent-report btn-pdf">
                 <i class="bi bi-file-earmark-pdf-fill"></i>
                 <span>PDF</span>
@@ -212,7 +212,7 @@ require __DIR__ . '/../includes/messages.php';
         </div>
     </div>
 
-    <div class="table-responsive">
+    <div class="table-responsive" id="monthlyTable">
         <table class="table data-table monthly-contract-table align-middle">
             <thead>
                 <tr>
@@ -302,8 +302,8 @@ require __DIR__ . '/../includes/messages.php';
 
                             <td class="text-center">
                                 <div class="table-actions monthly-actions">
-                                    <a class="btn btn-sm btn-shell" href="monthly-contract-edit.php?id=<?= e((string) $contract['id']) ?>">Edit</a>
-                                    <a class="btn btn-sm btn-shell" href="monthly-contract-renew.php?id=<?= e((string) $contract['id']) ?>">Renew</a>
+                                    <a class="btn btn-sm btn-shell" href="contract_edit.php?id=<?= e((string) $contract['id']) ?>">Edit</a>
+                                    <a class="btn btn-sm btn-shell" href="contract_renew.php?id=<?= e((string) $contract['id']) ?>">Renew</a>
                                     <form
                                         method="post"
                                         action="monthly-contract-delete.php?id=<?= e((string) $contract['id']) ?>"

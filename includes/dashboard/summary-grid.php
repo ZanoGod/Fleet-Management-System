@@ -39,7 +39,7 @@ $summary = ($summary ?? []) + [
         <small>Confirmed bookings not yet ended</small>
     </div>
 
-    <a class="card-shell overview-card overview-card-link" href="monthly-contracts.php">
+    <a class="card-shell overview-card overview-card-link" href="monthly_contract/monthly-contracts.php">
         <span>Monthly Contracts</span>
         <strong><?= e((string) $summary['total_contracts']) ?></strong>
         <small><?= e((string) $summary['expiring_contracts']) ?> expiring soon</small>

@@ -87,6 +87,7 @@ require __DIR__ . '/includes/messages.php';
 $formTitle = 'Add Operator';
 $submitLabel = 'Save Operator';
 $formAction = 'operator-create.php';
+$backUrl='operators.php';
 require __DIR__ . '/includes/operator-form.php';
 require __DIR__ . '/includes/footer.php';
 ?>

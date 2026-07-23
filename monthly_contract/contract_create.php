@@ -2,18 +2,18 @@
 
 declare(strict_types=1);
 
-require_once __DIR__ . '/includes/bootstrap.php';
-require_once __DIR__ . '/includes/monthly-contracts-data.php';
+require_once __DIR__ . '/../includes/bootstrap.php';
+require_once __DIR__ . '/monthly-contracts-data.php';
 
 $activePage = 'monthly-contract-dashboard';
 $navigationItems = monthly_contract_navigation();
-$sidebarKicker = 'Module';
+$sidebarKicker = 'Fleet Management';
 $sidebarTitle = 'Monthly Contracts';
-$sidebarBrandMark = 'MC';
-$pageKicker = 'Monthly Contract Module';
+$sidebarBrandMark = 'GSS';
+$pageKicker = 'Monthly Contracts';
 $pageTitle = 'Add Monthly Contract';
 $pageSummary = 'Create a long-term customer assignment with monthly billing and expiry tracking.';
-$pageActions = '<a class="btn btn-shell" href="monthly-contracts.php">All Contracts</a>';
+$pageActions = '<a class="btn btn-dashboard" href="monthly-contracts.php">All Contracts</a>';
 $pageStyles = ['assets/css/monthly-contracts.css'];
 $errors = [];
 $cars = [];
@@ -107,8 +107,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-require __DIR__ . '/includes/header.php';
-require __DIR__ . '/includes/messages.php';
+require __DIR__ . '/../includes/header.php';
+require __DIR__ . '/../includes/messages.php';
 ?>
 
 <?php if ($errors !== []): ?>
@@ -122,8 +122,8 @@ require __DIR__ . '/includes/messages.php';
 <?php endif; ?>
 
 <?php
-$formTitle = 'Add Monthly Contract';
+$formTitle = 'Create Monthly Contract';
 $submitLabel = 'Save Contract';
-require __DIR__ . '/includes/monthly-contract-form.php';
-require __DIR__ . '/includes/footer.php';
+require __DIR__ . '/monthly-contract-form.php';
+require __DIR__ . '/../includes/footer.php';
 ?>

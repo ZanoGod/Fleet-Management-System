@@ -10,7 +10,8 @@
           "-webkit-text-size-adjust",
           "text-align: -webkit-match-parent",
           "scrollbar-gutter",
-          "scrollbar-gutter: stable"
+          "scrollbar-gutter: stable",
+          "backdrop-filter"
         ]
       }
     ]

@@ -26,19 +26,36 @@ session_start([
 $currentPage = basename($_SERVER['PHP_SELF']);
 
 // If they are not logged in, and they are NOT on the login page, kick them out to login.php
-if (empty($_SESSION['admin_logged_in']) && $currentPage !== 'login.php') {
-    header('Location: login.php');
-    exit;
-}
+// if (empty($_SESSION['admin_logged_in']) && $currentPage !== 'login.php') {
+//     header('Location: login.php');
+    
+//     exit;
+// }
 
-// Check if user agent unexpectedly changes mid-session
+// // Check if user agent unexpectedly changes mid-session
+// if (isset($_SESSION['admin_logged_in'])) {
+//     if (!isset($_SESSION['user_agent']) || $_SESSION['user_agent'] !== $_SERVER['HTTP_USER_AGENT']) {
+//         // Clear session and force re-login
+//         $_SESSION = [];
+//         session_destroy();
+//         header('Location: login.php');
+//         exit;
+//     }
+// }
+
+// if (empty($_SESSION['admin_logged_in']) && $currentPage !== 'login.php') {
+//     redirect('login.php');
+// }
+
+
 if (isset($_SESSION['admin_logged_in'])) {
-    if (!isset($_SESSION['user_agent']) || $_SESSION['user_agent'] !== $_SERVER['HTTP_USER_AGENT']) {
-        // Clear session and force re-login
+    if (
+        !isset($_SESSION['user_agent']) ||
+        $_SESSION['user_agent'] !== $_SERVER['HTTP_USER_AGENT']
+    ) {
         $_SESSION = [];
         session_destroy();
-        header('Location: login.php');
-        exit;
+        redirect('login.php');
     }
 }
 // ==========================================

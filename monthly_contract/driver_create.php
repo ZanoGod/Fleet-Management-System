@@ -2,17 +2,17 @@
 
 declare(strict_types=1);
 
-require_once __DIR__ . '/includes/bootstrap.php';
+require_once __DIR__ . '/../includes/bootstrap.php';
 
-$activePage = 'monthly-contract-drivers';
+$activePage = 'monthly-drivers';
 $navigationItems = monthly_contract_navigation();
-$sidebarKicker = 'Module';
+$sidebarKicker = 'Fleet Management';
 $sidebarTitle = 'Monthly Contracts';
-$sidebarBrandMark = 'MC';
-$pageKicker = 'Monthly Contract Module';
-$pageTitle = 'Add Monthly Driver';
+$sidebarBrandMark = 'GSS';
+$pageKicker = 'Monthly Contracts';
+$pageTitle = 'Driver';
 $pageSummary = 'Create a driver record that is only used for monthly contracts.';
-$pageActions = '<a class="btn btn-shell" href="monthly-contract-drivers.php">All Monthly Drivers</a>';
+$pageActions = '<a class="btn btn-dashboard" href="drivers.php">All Monthly Drivers</a>';
 $pageStyles = ['assets/css/drivers.css', 'assets/css/monthly-contracts.css'];
 $errors = [];
 $driver = [
@@ -66,7 +66,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($statement->execute()) {
                 $statement->close();
                 set_flash('success', 'Monthly driver added successfully.');
-                redirect('monthly-contract-drivers.php');
+                redirect('drivers.php');
             }
 
             $errors[] = 'Unable to save the monthly driver. Please try again.';
@@ -75,8 +75,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-require __DIR__ . '/includes/header.php';
-require __DIR__ . '/includes/messages.php';
+require __DIR__ . '/../includes/header.php';
+require __DIR__ . '/../includes/messages.php';
 ?>
 
 <?php if ($errors !== []): ?>
@@ -92,13 +92,13 @@ require __DIR__ . '/includes/messages.php';
 <?php
 $formTitle = 'Add Monthly Driver';
 $submitLabel = 'Save Driver';
-$backUrl = 'monthly-contract-drivers.php';
-$backLabel = 'Back to Monthly Drivers';
+$backUrl = 'drivers.php';
+$backLabel = 'Back to Drivers';
 $formLead = 'Maintain driver master data for monthly contract assignments.';
 $assignmentNoteTitle = 'Monthly dates stay in Monthly Contracts.';
 $assignmentNoteBody = 'Customer, contract number, start date, and end date are linked from monthly contract records automatically, so update those details from';
 $assignmentNoteLinkUrl = 'monthly-contracts.php';
 $assignmentNoteLinkText = 'Monthly Contracts';
-require __DIR__ . '/includes/driver-form.php';
-require __DIR__ . '/includes/footer.php';
+require __DIR__ . '/../includes/driver-form.php';
+require __DIR__ . '/../includes/footer.php';
 ?>

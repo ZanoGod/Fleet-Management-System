@@ -2,17 +2,17 @@
 
 declare(strict_types=1);
 
-require_once __DIR__ . '/includes/bootstrap.php';
+require_once __DIR__ . '/../includes/bootstrap.php';
 
-$activePage = 'monthly-contract-drivers';
+$activePage = 'monthly-drivers';
 $navigationItems = monthly_contract_navigation();
-$sidebarKicker = 'Module';
+$sidebarKicker = 'Fleet Management';
 $sidebarTitle = 'Monthly Contracts';
-$sidebarBrandMark = 'MC';
-$pageKicker = 'Monthly Contract Module';
-$pageTitle = 'Monthly Contract Drivers';
+$sidebarBrandMark = 'GSS';
+$pageKicker = 'Monthly Contracts';
+$pageTitle = 'Drivers';
 $pageSummary = 'Maintain drivers reserved for monthly contracts separately from daily booking drivers.';
-$pageActions = '<a class="btn btn-shell" href="index.php">Daily Booking</a> <a class="btn btn-accent" href="monthly-contract-driver-create.php">Add Driver</a>';
+$pageActions = '<a class="btn btn-accent" href="driver_create.php">Add Driver</a>';
 $pageStyles = ['assets/css/drivers.css', 'assets/css/monthly-contracts.css'];
 $flash = get_flash();
 
@@ -108,8 +108,8 @@ if ($db instanceof mysqli) {
     }
 }
 
-require __DIR__ . '/includes/header.php';
-require __DIR__ . '/includes/messages.php';
+require __DIR__ . '/../includes/header.php';
+require __DIR__ . '/../includes/messages.php';
 ?>
 
 <section class="overview-grid">
@@ -143,7 +143,7 @@ require __DIR__ . '/includes/messages.php';
         </div>
     </div>
 
-    <form method="get" action="monthly-contract-drivers.php#monthlyDriversResultsSection" class="filter-grid" data-preserve-scroll="monthlyDriversFiltersSection">
+    <form method="get" action="drivers.php#monthlyDriversResultsSection" class="filter-grid" data-preserve-scroll="monthlyDriversFiltersSection">
         <div>
             <label for="search" class="form-label">Search</label>
             <input
@@ -261,10 +261,10 @@ require __DIR__ . '/includes/messages.php';
                             </td>
                             <td class="text-center">
                                 <div class="d-flex justify-content-center gap-2 flex-wrap">
-                                    <a class="btn btn-sm btn-shell" href="monthly-contract-driver-edit.php?id=<?= e((string) $driver['id']) ?>">Edit</a>
+                                    <a class="btn btn-sm btn-shell" href="driver_edit.php?id=<?= e((string) $driver['id']) ?>">Edit</a>
                                     <form
                                         method="post"
-                                        action="monthly-contract-driver-delete.php?id=<?= e((string) $driver['id']) ?>"
+                                        action="river_delete.php?id=<?= e((string) $driver['id']) ?>"
                                         onsubmit="return confirm('Delete this monthly driver?');">
                                         <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
                                     </form>
@@ -278,4 +278,4 @@ require __DIR__ . '/includes/messages.php';
     </div>
 </section>
 
-<?php require __DIR__ . '/includes/footer.php'; ?>
+<?php require __DIR__ . '/../includes/footer.php'; ?>

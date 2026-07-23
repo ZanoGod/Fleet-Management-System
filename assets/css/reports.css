@@ -209,6 +209,14 @@
     display: none;
 }
 
+
+.report-rate{
+    color:var(--cocoa);
+    font-weight:800;
+    font-size:.9rem;
+}
+
+
 .report-actions {
     display: flex;
     align-items: center;
@@ -345,6 +353,17 @@
 .report-metrics-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
     margin-top: 1rem;
+}
+
+.resource-pill{
+    display:inline-flex;
+    align-items:center;
+    padding:.35rem .7rem;
+    border-radius:999px;
+    font-size:.78rem;
+    font-weight:700;
+    line-height:1.2;
+    white-space:normal;
 }
 
 @media (max-width: 1199.98px) {

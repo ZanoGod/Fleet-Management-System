@@ -6,6 +6,7 @@ $operator = $operator ?? [];
 $submitLabel = $submitLabel ?? 'Save Operator';
 $formTitle = $formTitle ?? 'Operator Form';
 $formAction = $formAction ?? '';
+$backUrl = $backUrl ?? '';
 
 $isEdit = isset($operator['id']) && (int)$operator['id'] > 0;
 ?>
@@ -21,7 +22,7 @@ $isEdit = isset($operator['id']) && (int)$operator['id'] > 0;
                 </p>
             </div>
 
-            <a class="btn btn-shell" href="operators.php">
+            <a class="btn btn-shell" href="<?= e($backUrl) ?>">
                 Back to Operators
             </a>
         </div>

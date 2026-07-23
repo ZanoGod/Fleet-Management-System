@@ -18,63 +18,65 @@ body {
 
 /* --- GLOBAL LOCK --- */
 body.is-loading {
-    overflow: hidden !important;
+  overflow: hidden !important;
 }
 
 /* Ensure fixed positioning uses inset instead of 100vw to respect scrollbars */
 .page-loader {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: var(--paper-strong);
-    z-index: 99999;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    opacity: 0;
-    visibility: hidden;
-    pointer-events: none;
-    transition: opacity 0.25s ease, visibility 0.25s ease;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--paper-strong);
+  z-index: 99999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition:
+    opacity 0.25s ease,
+    visibility 0.25s ease;
 }
 
 body.is-loading .page-loader {
-    opacity: 1;
-    visibility: visible;
-    pointer-events: auto;
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
 }
 
 /* Content Entrance */
 .app-content {
-    opacity: 0;
-    animation: none;
+  opacity: 0;
+  animation: none;
 }
 
 .app-content.is-visible {
-    animation: pageEnter 0.45s ease forwards;
+  animation: pageEnter 0.45s ease forwards;
 }
 
 @keyframes pageEnter {
-    from { opacity: 0; transform: translateY(15px); }
-    to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(15px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 /* Progress Bar */
 
 .loader-progress {
   position: absolute;
-
   top: 0;
-
   left: 0;
-
   height: 4px;
-
   width: 0;
-
   background: linear-gradient(90deg, var(--gold), var(--amber));
-
-  animation: loadingProgress 1.5s ease forwards;
+  animation: loadingProgress 0.5s linear forwards;
 }
 
 @keyframes loadingProgress {
@@ -105,8 +107,7 @@ body.is-loading .page-loader {
   background: linear-gradient(90deg, #eeeeee 25%, #f7f7f7 37%, #eeeeee 63%);
 
   background-size: 400% 100%;
-
-  animation: shimmer 1.5s infinite;
+  animation: shimmer 0.9s linear infinite;
 
   border-radius: 16px;
 }
@@ -217,12 +218,12 @@ body.is-loading .page-loader {
 }
 
 .app-content {
-    opacity: 0;
-    animation: none; 
+  opacity: 0;
+  animation: none;
 }
 
 .app-content.is-visible {
-    animation: pageEnter 0.45s ease forwards;
+  animation: pageEnter 0.22s ease-out forwards;
 }
 
 @keyframes pageEnter {

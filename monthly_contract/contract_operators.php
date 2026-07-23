@@ -2,17 +2,17 @@
 
 declare(strict_types=1);
 
-require_once __DIR__ . '/includes/bootstrap.php';
+require_once __DIR__ . '/../includes/bootstrap.php';
 
-$activePage = 'monthly-contract-operators';
+$activePage = 'monthly-operators';
 $navigationItems = monthly_contract_navigation();
-$sidebarKicker = 'Module';
+$sidebarKicker = 'Fleet Management';
 $sidebarTitle = 'Monthly Contracts';
-$sidebarBrandMark = 'MC';
-$pageKicker = 'Monthly Contract Module';
-$pageTitle = 'Monthly Contract Operators';
+$sidebarBrandMark = 'GSS';
+$pageKicker = 'Monthly Contracts';
+$pageTitle = 'Operators';
 $pageSummary = 'View the operator directory while staying inside the monthly contract module.';
-$pageActions = '<a class="btn btn-shell" href="monthly-contracts.php">Dashboard</a>';
+$pageActions = '<a class="btn btn-accent" href="contract_op_create.php">Add Operator</a>';
 $flash = get_flash();
 
 $filters = [
@@ -83,8 +83,8 @@ if ($db instanceof mysqli) {
     }
 }
 
-require __DIR__ . '/includes/header.php';
-require __DIR__ . '/includes/messages.php';
+require __DIR__ . '/../includes/header.php';
+require __DIR__ . '/../includes/messages.php';
 ?>
 
 <section class="overview-grid">
@@ -113,7 +113,7 @@ require __DIR__ . '/includes/messages.php';
         </div>
     </div>
 
-    <form method="get" action="monthly-contract-operators.php" class="filter-grid">
+    <form method="get" action="contract_operators.php" class="filter-grid">
         <div>
             <label for="search" class="form-label">Search</label>
             <input type="text" class="form-control" id="search" name="search" value="<?= e($filters['search']) ?>" placeholder="Operator name, phone, note">
@@ -175,4 +175,4 @@ require __DIR__ . '/includes/messages.php';
     </div>
 </section>
 
-<?php require __DIR__ . '/includes/footer.php'; ?>
+<?php require __DIR__ . '/../includes/footer.php'; ?>

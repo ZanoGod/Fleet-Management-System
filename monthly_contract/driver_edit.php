@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-require_once __DIR__ . '/includes/bootstrap.php';
+require_once __DIR__ . '/../includes/bootstrap.php';
 
-$activePage = 'monthly-contract-drivers';
+$activePage = 'monthly-drivers';
 $navigationItems = monthly_contract_navigation();
 $sidebarKicker = 'Module';
 $sidebarTitle = 'Monthly Contracts';
@@ -12,7 +12,7 @@ $sidebarBrandMark = 'MC';
 $pageKicker = 'Monthly Contract Module';
 $pageTitle = 'Edit Monthly Driver';
 $pageSummary = 'Update a monthly-only driver record.';
-$pageActions = '<a class="btn btn-shell" href="monthly-contract-drivers.php">All Monthly Drivers</a>';
+$pageActions = '<a class="btn btn-dashboard" href="drivers.php">All Monthly Drivers</a>';
 $pageStyles = ['assets/css/drivers.css', 'assets/css/monthly-contracts.css'];
 $errors = [];
 $id = (int) ($_GET['id'] ?? 0);
@@ -23,9 +23,9 @@ if ($id <= 0) {
 }
 
 if (!($db instanceof mysqli)) {
-    require __DIR__ . '/includes/header.php';
-    require __DIR__ . '/includes/messages.php';
-    require __DIR__ . '/includes/footer.php';
+    require __DIR__ . '/../includes/header.php';
+    require __DIR__ . '/../includes/messages.php';
+    require __DIR__ . '/../includes/footer.php';
     return;
 }
 
@@ -97,8 +97,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-require __DIR__ . '/includes/header.php';
-require __DIR__ . '/includes/messages.php';
+require __DIR__ . '/../includes/header.php';
+require __DIR__ . '/../includes/messages.php';
 ?>
 
 <?php if ($errors !== []): ?>
@@ -114,13 +114,13 @@ require __DIR__ . '/includes/messages.php';
 <?php
 $formTitle = 'Edit Monthly Driver';
 $submitLabel = 'Update Driver';
-$backUrl = 'monthly-contract-drivers.php';
+$backUrl = 'drivers.php';
 $backLabel = 'Back to Monthly Drivers';
 $formLead = 'Maintain driver master data for monthly contract assignments.';
 $assignmentNoteTitle = 'Monthly dates stay in Monthly Contracts.';
 $assignmentNoteBody = 'Customer, contract number, start date, and end date are linked from monthly contract records automatically, so update those details from';
 $assignmentNoteLinkUrl = 'monthly-contracts.php';
 $assignmentNoteLinkText = 'Monthly Contracts';
-require __DIR__ . '/includes/driver-form.php';
-require __DIR__ . '/includes/footer.php';
+require __DIR__ . '/../includes/driver-form.php';
+require __DIR__ . '/../includes/footer.php';
 ?>

@@ -1,17 +1,17 @@
 <?php
 
 declare(strict_types=1);
-// require_once __DIR__ . '/includes/bootstrap.php';
-// require_once __DIR__ . '/includes/dashboard-data.php';
-require_once __DIR__ . '/../includes/bootstrap.php';
-require_once __DIR__ . '/../includes/dashboard-data.php';
+require_once __DIR__ . '/includes/bootstrap.php';
+require_once __DIR__ . '/includes/dashboard-data.php';
+// require_once __DIR__ . '/../includes/bootstrap.php';
+// require_once __DIR__ . '/../includes/dashboard-data.php';
 
 
 
 $activePage = 'dashboard';
 $pageTitle = 'Dashboard';
 $pageSummary = 'Monitor normal daily bookings, available cars, and driver readiness from one warm, simple control panel.';
-$pageActions = '<a class="btn btn-accent" href="./monthly_contract/monthly-contracts.php">Monthly Contract</a>';
+$pageActions = '<a class="btn btn-dashboard" href="./monthly_contract/monthly-contracts.php">Monthly Contract</a>';
 // $pageActions = '<a class="btn btn-shell" href="monthly_contract/monthly-contracts.php">Monthly Contract</a> 
 // <a class="btn btn-accent" href="create.php">Add Booking</a>';
 $flash = get_flash();
@@ -23,25 +23,25 @@ $bookingStatusCounts = $dashboardData['bookingStatusCounts'];
 $carStatusCounts = $dashboardData['carStatusCounts'];
 $driverStatusCounts = $dashboardData['driverStatusCounts'];
 
-require __DIR__ . '/../includes/header.php';
-require __DIR__ . '/../includes/messages.php';
+require __DIR__ . '/includes/header.php';
+require __DIR__ . '/includes/messages.php';
 
 ?>
 
 
 
-<?php require __DIR__ . '/../includes/dashboard/summary-grid.php'; ?>
+<?php require __DIR__ . '/includes/dashboard/summary-grid.php'; ?>
 
 <section>
-    <?php require __DIR__ . '/../includes/dashboard/recent-bookings-card.php'; ?>
+    <?php require __DIR__ . '/includes/dashboard/recent-bookings-card.php'; ?>
 </section>
 
 <br>
 
 <section class="mini-grid mb-4">
-    <?php require __DIR__ . '/../includes/dashboard/insights-column.php'; ?>
+    <?php require __DIR__ . '/includes/dashboard/insights-column.php'; ?>
 </section>
 
 
 
-<?php require __DIR__ . '/../includes/footer.php'; ?>
+<?php require __DIR__ . '/includes/footer.php'; ?>

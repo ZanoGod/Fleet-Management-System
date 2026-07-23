@@ -2,17 +2,17 @@
 
 declare(strict_types=1);
 
-require_once __DIR__ . '/includes/bootstrap.php';
+require_once __DIR__ . '/../includes/bootstrap.php';
 
-$activePage = 'monthly-contract-cars';
+$activePage = 'contract-cars';
 $navigationItems = monthly_contract_navigation();
-$sidebarKicker = 'Module';
+$sidebarKicker = 'Fleet Management';
 $sidebarTitle = 'Monthly Contracts';
-$sidebarBrandMark = 'MC';
-$pageKicker = 'Monthly Contract Module';
+$sidebarBrandMark = 'GSS';
+$pageKicker = 'Monthly Contracts';
 $pageTitle = 'Add Monthly Vehicle';
 $pageSummary = 'Create a vehicle record that is only used for monthly contracts.';
-$pageActions = '<a class="btn btn-shell" href="monthly-contract-cars.php">All Monthly Vehicles</a>';
+$pageActions = '<a class="btn btn-dashboard" href="contract_cars.php">All Monthly Vehicles</a>';
 $pageStyles = ['assets/css/cars.css', 'assets/css/monthly-contracts.css'];
 $errors = [];
 $car = [
@@ -86,8 +86,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-require __DIR__ . '/includes/header.php';
-require __DIR__ . '/includes/messages.php';
+require __DIR__ . '/../includes/header.php';
+require __DIR__ . '/../includes/messages.php';
 ?>
 
 <?php if ($errors !== []): ?>
@@ -103,13 +103,13 @@ require __DIR__ . '/includes/messages.php';
 <?php
 $formTitle = 'Add Monthly Vehicle';
 $submitLabel = 'Save Vehicle';
-$backUrl = 'monthly-contract-cars.php';
-$backLabel = 'Back to Monthly Vehicles';
+$backUrl = 'contract_cars.php';
+$backLabel = 'Back to Vehicles';
 $formLead = 'Maintain vehicle master data for monthly contract assignments.';
 $assignmentNoteTitle = 'Monthly dates stay in Monthly Contracts.';
 $assignmentNoteBody = 'Customer, contract number, start date, and end date are linked from monthly contract records automatically, so update those details from';
 $assignmentNoteLinkUrl = 'monthly-contracts.php';
 $assignmentNoteLinkText = 'Monthly Contracts';
-require __DIR__ . '/includes/car-form.php';
-require __DIR__ . '/includes/footer.php';
+require __DIR__ . '/../includes/car-form.php';
+require __DIR__ . '/../includes/footer.php';
 ?>

@@ -2,59 +2,113 @@
 
 declare(strict_types=1);
 
-require_once __DIR__ . '/includes/bootstrap.php';
-require_once __DIR__ . '/includes/monthly-contracts-data.php';
+require_once __DIR__ . '/../includes/bootstrap.php';
+require_once __DIR__ . '/monthly-contracts-data.php';
 
-$activePage = 'monthly-contract-customers';
+$activePage = 'monthly-customers';
 $navigationItems = monthly_contract_navigation();
-$sidebarKicker = 'Module';
+$sidebarKicker = 'Fleet Management';
 $sidebarTitle = 'Monthly Contracts';
-$sidebarBrandMark = 'MC';
-$pageKicker = 'Monthly Contract Module';
-$pageTitle = 'Monthly Contract Customers';
+$sidebarBrandMark = 'GSS';
+$pageKicker = 'Monthly Contracts';
+$pageTitle = 'Customers';
 $pageSummary = 'Review customers connected to monthly contract records.';
-$pageActions = '<a class="btn btn-shell" href="monthly-contracts.php">Dashboard</a> <a class="btn btn-accent" href="monthly-contract-create.php">Add Contract</a>';
-$pageStyles = ['assets/css/reports.css', 'assets/css/monthly-contracts.css'];
+$pageActions = '<a class="btn btn-accent" href="customers_add.php">Add Customer</a>';
+$pageStyles = ['assets/css/customers.css', 'assets/css/monthly-contracts.css'];
 
 $filters = monthly_contract_filters($_GET);
-$contracts = [];
+$customers = [];
 $stats = [
     'records' => 0,
     'customers' => 0,
     'active' => 0,
-    'revenue' => 0,
 ];
 
 if ($db instanceof mysqli) {
-    $contracts = monthly_contract_fetch($db, $filters);
-    $customerKeys = [];
+    $where = [];
+    $types = '';
+    $params = [];
 
-    foreach ($contracts as $contract) {
-        $stats['records']++;
+    if ($filters['search'] !== '') {
 
-        $customerKey = strtolower(trim(
-            (string) $contract['customer_name']
-            . '|'
-            . (string) $contract['customer_phone']
-            . '|'
-            . (string) $contract['customer_email']
-        ));
+        $where[] = "(
+        company_name LIKE ?
+        OR guest_name LIKE ?
+        OR contact_person LIKE ?
+        OR contact_phone LIKE ?
+        OR contact_email LIKE ?
+    )";
 
-        if ($customerKey !== '||') {
-            $customerKeys[$customerKey] = true;
-        }
+        $search = '%' . $filters['search'] . '%';
 
-        if ((string) $contract['status'] === 'Active') {
-            $stats['active']++;
-            $stats['revenue'] += (float) $contract['monthly_rate'];
-        }
+        $types .= 'sssss';
+
+        array_push(
+            $params,
+            $search,
+            $search,
+            $search,
+            $search,
+            $search
+        );
     }
 
-    $stats['customers'] = count($customerKeys);
+    if ($filters['status'] !== '') {
+        $where[] = 'customer_status = ?';
+        $types .= 's';
+        $params[] = $filters['status'];
+    }
+
+    $sql = "
+SELECT
+    id,
+    company_name,
+    guest_name,
+    contact_person,
+    contact_phone,
+    contact_email,
+    customer_status,
+    remark
+FROM customers
+";
+
+    if ($where !== []) {
+        $sql .= ' WHERE ' . implode(' AND ', $where);
+    }
+
+    $sql .= " ORDER BY company_name ASC";
+    $statement = $db->prepare($sql);
+
+    if ($statement instanceof mysqli_stmt) {
+        if ($params !== []) {
+            bind_statement_params($statement, $types, $params);
+        }
+
+        $statement->execute();
+        $result = $statement->get_result();
+
+        while ($row = $result->fetch_assoc()) {
+            $customers[] = $row;
+        }
+
+        $statement->close();
+    }
+
+    $statsResult = $db->query(
+        "SELECT
+    COUNT(*) AS records,
+    COUNT(*) AS customers,
+    SUM(customer_status='Active') AS active
+FROM customers"
+    );
+
+    if ($statsResult instanceof mysqli_result) {
+        $stats = array_merge($stats, $statsResult->fetch_assoc() ?: []);
+    }
 }
 
-require __DIR__ . '/includes/header.php';
-require __DIR__ . '/includes/messages.php';
+require __DIR__ . '/../includes/header.php';
+require __DIR__ . '/../includes/messages.php';
 ?>
 
 <section class="overview-grid report-metrics-grid">
@@ -73,11 +127,6 @@ require __DIR__ . '/includes/messages.php';
         <strong><?= e((string) $stats['active']) ?></strong>
         <small>Currently running</small>
     </div>
-    <div class="card-shell overview-card">
-        <span>Revenue</span>
-        <strong><?= e(monthly_contract_money($stats['revenue'])) ?></strong>
-        <small>Active monthly value</small>
-    </div>
 </section>
 
 <section class="card-shell section-card mb-4">
@@ -88,7 +137,7 @@ require __DIR__ . '/includes/messages.php';
         </div>
     </div>
 
-    <form method="get" action="monthly-contract-customers.php" class="monthly-contract-filter-grid">
+    <form method="get" action="customers.php#monthlyCustomersResultsSection" class="monthly-contract-filter-grid">
         <div>
             <label for="search" class="form-label">Search</label>
             <input type="text" class="form-control" id="search" name="search" value="<?= e($filters['search']) ?>" placeholder="Customer, contract, vehicle, driver, operator">
@@ -146,78 +195,108 @@ require __DIR__ . '/includes/messages.php';
     <div class="section-title">
         <div>
             <h2>Customer Contract List</h2>
-            <p><?= e((string) count($contracts)) ?> customer contract records found.</p>
+            <p><?= e((string) count($customers)) ?> customer contract records found.</p>
         </div>
     </div>
 
-    <div class="report-table-shell">
-        <table class="table data-table report-table monthly-report-table">
+    <div class="table-responsive" id="monthlyCustomersResultsSection">
+        <table class="table data-table customers-table align-middle">
             <thead>
                 <tr>
-                    <th>Customer</th>
-                    <th>Contact</th>
-                    <th>Contract</th>
-                    <th>Assignment</th>
-                    <th>Dates</th>
-                    <th>Rate</th>
-                    <th>Payment</th>
+                    <th>#</th>
+                    <th>Company</th>
+                    <th>Guest</th>
+                    <th>Contact Person</th>
+                    <th>Phone</th>
+                    <th>Email</th>
                     <th>Status</th>
-                    <th class="text-center">Action</th>
+                    <th>Remark</th>
+                    <th width="120">Action</th>
                 </tr>
             </thead>
+
             <tbody>
-                <?php if ($contracts === []): ?>
+
+                <?php if (empty($customers)): ?>
+
                     <tr>
-                        <td colspan="9" class="text-center py-5 text-muted-soft">No customer contracts found.</td>
+                        <td colspan="9" class="text-center py-5 text-muted">
+                            No customers found.
+                        </td>
                     </tr>
+
                 <?php else: ?>
-                    <?php foreach ($contracts as $contract): ?>
+
+                    <?php foreach ($customers as $index => $customer): ?>
+
                         <tr>
-                            <td data-label="Customer">
-                                <strong><?= e((string) $contract['customer_name']) ?></strong>
+
+                            <td class="text-center">
+                                <?= $index + 1 ?>
                             </td>
-                            <td data-label="Contact">
-                                <div><?= e((string) ($contract['customer_phone'] ?: '-')) ?></div>
-                                <div class="soft-note"><?= e((string) ($contract['customer_email'] ?: '-')) ?></div>
+
+                            <td class="customer-company">
+                                <?= e($customer['company_name']) ?>
                             </td>
-                            <td data-label="Contract">
-                                <strong><?= e((string) $contract['contract_no']) ?></strong>
+
+                            <td>
+                                <?= e($customer['guest_name'] ?: '-') ?>
                             </td>
-                            <td data-label="Assignment">
-                                <span class="resource-pill <?= e(monthly_contract_assignment_badge_class((string) $contract['assignment_type'])) ?>">
-                                    <?= e((string) $contract['assignment_type']) ?>
+
+                            <td>
+                                <?= e($customer['contact_person'] ?: '-') ?>
+                            </td>
+
+                            <td>
+                                <?= e($customer['contact_phone'] ?: '-') ?>
+                            </td>
+
+                            <td class="customer-email">
+                                <?= e($customer['contact_email'] ?: '-') ?>
+                            </td>
+
+                            <td class="text-center">
+
+                                <span class="customer-status <?= strtolower($customer['customer_status']) ?>">
+                                    <?= e($customer['customer_status']) ?>
                                 </span>
-                                <div class="soft-note mt-1"><?= e(monthly_contract_vehicle_display($contract)) ?></div>
-                                <div class="soft-note"><?= e(monthly_contract_driver_display($contract)) ?></div>
-                                <div class="soft-note">Operator: <?= e(monthly_contract_operator_display($contract)) ?></div>
+
                             </td>
-                            <td data-label="Dates">
-                                <div class="report-date-primary"><?= e(format_display_date($contract['start_date'])) ?></div>
-                                <div class="report-date-secondary"><?= e(format_display_date($contract['end_date'])) ?></div>
+
+                            <td class="customer-remark">
+                                <?= e($customer['remark'] ?: '-') ?>
                             </td>
-                            <td data-label="Rate"><?= e(monthly_contract_money($contract['monthly_rate'])) ?></td>
-                            <td data-label="Payment">
-                                <span class="resource-pill <?= e(monthly_contract_payment_badge_class((string) $contract['payment_status'])) ?>">
-                                    <?= e((string) $contract['payment_status']) ?>
-                                </span>
-                            </td>
-                            <td data-label="Status">
-                                <span class="status-pill <?= e(monthly_contract_status_badge_class((string) $contract['status'])) ?>">
-                                    <?= e((string) $contract['status']) ?>
-                                </span>
-                            </td>
-                            <td data-label="Action" class="text-center">
-                                <div class="table-actions monthly-actions">
-                                    <a class="btn btn-sm btn-shell" href="monthly-contract-edit.php?id=<?= e((string) $contract['id']) ?>">Edit</a>
-                                    <a class="btn btn-sm btn-shell" href="monthly-contract-renew.php?id=<?= e((string) $contract['id']) ?>">Renew</a>
+
+
+
+                            <td class="text-center">
+                                <div class="action-group">
+
+                                    <a href="customers_edit.php?id=<?= $customer['id'] ?>"
+                                        class="btn btn-edit btn-sm">
+                                        Edit
+                                    </a>
+
+                                    <a href="customers_delete.php?id=<?= $customer['id'] ?>"
+                                        class="btn btn-delete btn-sm"
+                                        onclick="return confirm('Are you sure you want to delete this customer?');">
+                                        Delete
+                                    </a>
+
                                 </div>
                             </td>
+
+
+
                         </tr>
+
                     <?php endforeach; ?>
+
                 <?php endif; ?>
+
             </tbody>
         </table>
     </div>
 </section>
 
-<?php require __DIR__ . '/includes/footer.php'; ?>
+<?php require __DIR__ . '/../includes/footer.php'; ?>

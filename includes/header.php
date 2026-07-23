@@ -26,8 +26,14 @@ if (is_string($pageStyles)) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= e($pageTitle) ?></title>
 
-    <link rel="icon" type="image/png" sizes="32x32" href="assets/img/favicon.png">
-    <link rel="shortcut icon" href="assets/img/favicon.ico">
+    <link rel="icon"
+        type="image/png"
+        sizes="32x32"
+        href="<?= e(asset_url('assets/img/favicon.png')) ?>">
+
+    <link rel="shortcut icon"
+        href="<?= e(asset_url('assets/img/favicon.ico')) ?>">
+
 
     <link rel="stylesheet" href="<?= e(asset_url('assets/vendor/bootstrap/bootstrap.min.css')) ?>">
 
@@ -40,7 +46,7 @@ if (is_string($pageStyles)) {
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@300..700&display=swap" rel="stylesheet">
-
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&icon_names=groups_2" />
     <?php foreach ($pageStyles as $stylesheet): ?>
         <link rel="stylesheet" href="<?= e(asset_url($stylesheet)) ?>">
     <?php endforeach; ?>
@@ -54,43 +60,43 @@ if (is_string($pageStyles)) {
 
         <div class="loader-progress"></div>
 
-<div class="skeleton-wrapper">
+        <div class="skeleton-wrapper">
 
-    <div class="skeleton-header"></div>
-
-
-    <div class="skeleton-stats">
-
-        <div class="skeleton-card"></div>
-
-        <div class="skeleton-card"></div>
-
-        <div class="skeleton-card"></div>
-
-        <div class="skeleton-card"></div>
-
-    </div>
+            <div class="skeleton-header"></div>
 
 
+            <div class="skeleton-stats">
 
-    <div class="skeleton-table">
+                <div class="skeleton-card"></div>
 
-        <div class="skeleton-table-title"></div>
+                <div class="skeleton-card"></div>
 
+                <div class="skeleton-card"></div>
 
-        <div class="skeleton-table-row"></div>
+                <div class="skeleton-card"></div>
 
-        <div class="skeleton-table-row"></div>
-
-        <div class="skeleton-table-row"></div>
-
-        <div class="skeleton-table-row"></div>
+            </div>
 
 
-    </div>
+
+            <div class="skeleton-table">
+
+                <div class="skeleton-table-title"></div>
 
 
-</div>
+                <div class="skeleton-table-row"></div>
+
+                <div class="skeleton-table-row"></div>
+
+                <div class="skeleton-table-row"></div>
+
+                <div class="skeleton-table-row"></div>
+
+
+            </div>
+
+
+        </div>
 
     </div>
     <div class="sidebar-backdrop" data-sidebar-close></div>
