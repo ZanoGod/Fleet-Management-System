@@ -33,18 +33,26 @@ if (!($db instanceof mysqli)) {
     return;
 }
 
-$cars = fetch_monthly_cars_for_select($db);
-$drivers = fetch_monthly_drivers_for_select($db);
-$operators = fetch_operators_for_select($db);
-$contract = monthly_contract_find($db, $id);
+$existingContract = monthly_contract_find($db, $id);
 
-if ($contract === null) {
+if ($existingContract === null) {
     set_flash('danger', 'Monthly contract record not found.');
     redirect('monthly-contracts.php');
 }
 
+$currentCarId = (int) ($existingContract['car_id'] ?? 0);
+$currentDriverId = (int) ($existingContract['driver_id'] ?? 0);
+
+$cars = fetch_monthly_cars_for_select($db, true, $currentCarId);
+$drivers = fetch_monthly_drivers_for_select($db, true, $currentDriverId);
+$operators = fetch_operators_for_select($db);
+$contract = $existingContract;
+$customerLabel = trim((string) ($existingContract['customer_name'] ?? ''));
+
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $contract = monthly_contract_payload($_POST, $contract);
+    $contract = monthly_contract_payload($_POST, $existingContract);
+    $contract['customer_id'] = (string) ($existingContract['customer_id'] ?? '');
 
     if (!verify_csrf_token((string) ($_POST['csrf_token'] ?? ''))) {
         $errors[] = 'Your form session expired. Please try again.';
@@ -57,6 +65,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'UPDATE monthly_contracts
              SET contract_no = ?,
                  customer_name = ?,
+                 guest_name = ?,
+                 contact_person = ?,
                  customer_phone = ?,
                  customer_email = ?,
                  customer_address = ?,
@@ -67,10 +77,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                  operator_name = ?,
                  start_date = ?,
                  end_date = ?,
+                 off_day = ?,
+                 service_hour = ?,
+                 even_odd = ?,
+                 operation_sheet = ?,
                  monthly_rate = ?,
-                 security_deposit = ?,
-                 payment_status = ?,
+                 rental_currency = ?,
+                 insurance_company = ?,
+                 insurance_price = ?,
+                 rental_status = ?,
                  status = ?,
+                 prepared_by = ?,
+                 invoice_sender = ?,
+                 checked_by = ?,
+                 terms_conditions = ?,
                  note = ?
              WHERE id = ?'
         );
@@ -80,10 +100,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } else {
             bind_statement_params(
                 $statement,
-                'ssssssiiisssddsssi',
+                's' . str_repeat('s', 7) . 'iii' . str_repeat('s', 6) . 'dsdsd' . str_repeat('s', 7) . 'i',
                 [
                     $contract['contract_no'],
                     $contract['customer_name'],
+                    $contract['guest_name'],
+                    $contract['contact_person'],
                     $contract['customer_phone'],
                     $contract['customer_email'],
                     $contract['customer_address'],
@@ -94,21 +116,41 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $contract['operator_name'],
                     $contract['start_date'],
                     $contract['end_date'],
+                    $contract['off_day'],
+                    $contract['service_hour'],
+                    $contract['even_odd'],
+                    $contract['operation_sheet'],
                     (float) $contract['monthly_rate'],
-                    (float) $contract['security_deposit'],
-                    $contract['payment_status'],
+                    $contract['rental_currency'],
+                    $contract['insurance_company'],
+                    (float) $contract['insurance_price'],
+                    $contract['rental_status'],
                     $contract['status'],
+                    $contract['prepared_by'],
+                    $contract['invoice_sender'],
+                    $contract['checked_by'],
+                    $contract['terms_conditions'],
                     $contract['note'],
                     $id,
                 ]
             );
 
-            if ($statement->execute()) {
+            $db->begin_transaction();
+            $updated = $statement->execute();
+            $customerStatusSynced = $updated && monthly_contract_sync_customer_status(
+                $db,
+                (int) ($existingContract['customer_id'] ?? 0),
+                (string) $contract['status']
+            );
+
+            if ($updated && $customerStatusSynced) {
+                $db->commit();
                 $statement->close();
                 set_flash('success', 'Monthly contract updated successfully.');
                 redirect('monthly-contracts.php');
             }
 
+            $db->rollback();
             $errors[] = 'Unable to update the contract. Contract number may already exist.';
             $statement->close();
         }
@@ -130,8 +172,9 @@ require __DIR__ . '/../includes/messages.php';
 <?php endif; ?>
 
 <?php
-$formTitle = 'Edit Monthly Contract';
+$formTitle = $customerLabel !== '' ? 'Edit Contract — ' . $customerLabel : 'Edit Monthly Contract';
 $submitLabel = 'Update Contract';
+$customerSelectionEnabled = false;
 require __DIR__ . '/monthly-contract-form.php';
 require __DIR__ . '/../includes/footer.php';
 ?>

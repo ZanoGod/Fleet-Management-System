@@ -39,14 +39,17 @@ if (!($db instanceof mysqli)) {
 
 $statement = $db->prepare(
     "SELECT
-        id,
-        company_name,
-        guest_name,
-        contact_person,
-        contact_phone,
-        contact_email,
-        customer_status,
-        remark
+    id,
+    company_name,
+    guest_name,
+    contact_person,
+    contact_phone,
+    contact_email,
+    customer_address,
+    off_day,
+    service_hour,
+    customer_status,
+    remark
      FROM customers
      WHERE id=?"
 );
@@ -73,14 +76,17 @@ if (!$customer) {
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     $customer = [
-        'id'               => $id,
-        'company_name'     => trim($_POST['company_name'] ?? ''),
-        'guest_name'       => trim($_POST['guest_name'] ?? ''),
-        'contact_person'   => trim($_POST['contact_person'] ?? ''),
-        'contact_phone'    => trim($_POST['contact_phone'] ?? ''),
-        'contact_email'    => trim($_POST['contact_email'] ?? ''),
-        'customer_status'  => trim($_POST['customer_status'] ?? 'Active'),
-        'remark'           => trim($_POST['remark'] ?? ''),
+        'id' => $id,
+        'company_name'   => trim($_POST['company_name'] ?? ''),
+        'guest_name'     => trim($_POST['guest_name'] ?? ''),
+        'contact_person' => trim($_POST['contact_person'] ?? ''),
+        'contact_phone'  => trim($_POST['contact_phone'] ?? ''),
+        'contact_email'  => trim($_POST['contact_email'] ?? ''),
+        'customer_address' => trim($_POST['customer_address'] ?? ''),
+        'off_day'        => trim($_POST['off_day'] ?? ''),
+        'service_hour'   => trim($_POST['service_hour'] ?? ''),
+        'customer_status' => trim($_POST['customer_status'] ?? 'Active'),
+        'remark'         => trim($_POST['remark'] ?? ''),
     ];
 
     if ($customer['company_name'] === '') {
@@ -132,30 +138,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         $update = $db->prepare(
             "UPDATE customers
-            SET
-                company_name=?,
-                guest_name=?,
-                contact_person=?,
-                contact_phone=?,
-                contact_email=?,
-                customer_status=?,
-                remark=?
-            WHERE id=?"
+     SET
+        company_name=?,
+        guest_name=?,
+        contact_person=?,
+        contact_phone=?,
+        contact_email=?,
+        customer_address=?,
+        off_day=?,
+        service_hour=?,
+        customer_status=?,
+        remark=?
+     WHERE id=?"
         );
 
         if (!$update instanceof mysqli_stmt) {
 
             $errors[] = 'Failed to prepare update statement.';
-
         } else {
 
             $update->bind_param(
-                'sssssssi',
+                'ssssssssssi',
                 $customer['company_name'],
                 $customer['guest_name'],
                 $customer['contact_person'],
                 $customer['contact_phone'],
                 $customer['contact_email'],
+                $customer['customer_address'],
+                $customer['off_day'],
+                $customer['service_hour'],
                 $customer['customer_status'],
                 $customer['remark'],
                 $id
@@ -192,7 +203,7 @@ require __DIR__ . '/../includes/messages.php';
 
         <?php foreach ($errors as $error): ?>
 
-            <li><?= e($error) ?></li>
+        <li><?= e($error) ?></li>
 
         <?php endforeach; ?>
 

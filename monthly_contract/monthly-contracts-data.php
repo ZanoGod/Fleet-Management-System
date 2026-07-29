@@ -8,7 +8,7 @@ function monthly_contract_default_filters(): array
         'search' => '',
         'status' => '',
         'assignment_type' => '',
-        'payment_status' => '',
+        'rental_status' => '',
         'expiry' => '',
         'date_from' => '',
         'date_to' => '',
@@ -35,10 +35,10 @@ function monthly_contract_filters(array $source): array
     }
 
     if (
-        $filters['payment_status'] !== ''
-        && !in_allowed_values($filters['payment_status'], monthly_contract_payment_statuses())
+        $filters['rental_status'] !== ''
+        && !in_allowed_values($filters['rental_status'], monthly_contract_rental_statuses())
     ) {
-        $filters['payment_status'] = '';
+        $filters['rental_status'] = '';
     }
 
     if (!in_array($filters['expiry'], ['', 'expiring', 'expired'], true)) {
@@ -51,12 +51,14 @@ function monthly_contract_filters(array $source): array
         }
     }
 
-    if (
-        $filters['date_from'] !== ''
-        && $filters['date_to'] !== ''
-        && $filters['date_to'] < $filters['date_from']
-    ) {
-        $filters['date_to'] = '';
+    if ($filters['date_from'] !== '' && $filters['date_to'] !== '') {
+
+        $from = DateTimeImmutable::createFromFormat('Y-m-d', $filters['date_from']);
+        $to   = DateTimeImmutable::createFromFormat('Y-m-d', $filters['date_to']);
+
+        if ($from && $to && $to < $from) {
+            $filters['date_to'] = '';
+        }
     }
 
     return $filters;
@@ -66,7 +68,8 @@ function monthly_contract_valid_date(string $date): bool
 {
     $parsed = DateTimeImmutable::createFromFormat('Y-m-d', $date);
 
-    return $parsed instanceof DateTimeImmutable && $parsed->format('Y-m-d') === $date;
+    return $parsed instanceof DateTimeImmutable
+        && $parsed->format('Y-m-d') === $date;
 }
 
 function monthly_contract_select_sql(): string
@@ -74,6 +77,7 @@ function monthly_contract_select_sql(): string
     return "SELECT
                 mc.id,
                 mc.contract_no,
+                mc.customer_id,
                 mc.customer_name,
                 mc.customer_phone,
                 mc.customer_email,
@@ -86,8 +90,7 @@ function monthly_contract_select_sql(): string
                 mc.start_date,
                 mc.end_date,
                 mc.monthly_rate,
-                mc.security_deposit,
-                mc.payment_status,
+                mc.rental_status,
                 mc.status,
                 mc.renewal_parent_id,
                 mc.note,
@@ -96,6 +99,20 @@ function monthly_contract_select_sql(): string
                 c.car_type,
                 c.plate_no,
                 c.model_name,
+                mc.guest_name,
+                mc.contact_person,
+                mc.even_odd,
+                mc.operation_sheet,
+                mc.off_day,
+                mc.service_hour,
+                mc.insurance_company,
+                mc.insurance_price,
+                mc.rental_currency,
+                mc.prepared_by,
+                mc.invoice_sender,
+                mc.checked_by,
+                mc.terms_conditions,
+                d.phone_number AS driver_phone,
                 d.full_name AS driver_name,
                 o.full_name AS operator_full_name,
                 parent.contract_no AS renewal_parent_no
@@ -147,10 +164,10 @@ function monthly_contract_where(array $filters): array
         $params[] = $filters['assignment_type'];
     }
 
-    if ($filters['payment_status'] !== '') {
-        $where[] = 'mc.payment_status = ?';
+    if ($filters['rental_status'] !== '') {
+        $where[] = 'mc.rental_status = ?';
         $types .= 's';
-        $params[] = $filters['payment_status'];
+        $params[] = $filters['rental_status'];
     }
 
     if ($filters['date_from'] !== '') {
@@ -306,6 +323,7 @@ function monthly_contract_payload(array $source, array $defaults = []): array
 {
     return [
         'contract_no' => old($source, 'contract_no', (string) ($defaults['contract_no'] ?? '')),
+        'customer_id' => old($source, 'customer_id', (string) ($defaults['customer_id'] ?? '')),
         'customer_name' => old($source, 'customer_name', (string) ($defaults['customer_name'] ?? '')),
         'customer_phone' => old($source, 'customer_phone', (string) ($defaults['customer_phone'] ?? '')),
         'customer_email' => old($source, 'customer_email', (string) ($defaults['customer_email'] ?? '')),
@@ -321,19 +339,27 @@ function monthly_contract_payload(array $source, array $defaults = []): array
         'operator_name' => (string) ($defaults['operator_name'] ?? ''),
         'start_date' => old($source, 'start_date', (string) ($defaults['start_date'] ?? '')),
         'end_date' => old($source, 'end_date', (string) ($defaults['end_date'] ?? '')),
-        'monthly_rate' => old($source, 'monthly_rate', (string) ($defaults['monthly_rate'] ?? '0.00')),
-        'security_deposit' => old(
+        'monthly_rate' => old($source, 'monthly_rate', (string) ($defaults['monthly_rate'] ?? '0')),
+        'rental_status' => old(
             $source,
-            'security_deposit',
-            (string) ($defaults['security_deposit'] ?? '0.00')
-        ),
-        'payment_status' => old(
-            $source,
-            'payment_status',
-            (string) ($defaults['payment_status'] ?? 'Pending')
+            'rental_status',
+            (string) ($defaults['rental_status'] ?? 'Pending')
         ),
         'status' => old($source, 'status', (string) ($defaults['status'] ?? 'Active')),
         'note' => old($source, 'note', (string) ($defaults['note'] ?? '')),
+        'guest_name'         => old($source, 'guest_name', (string)($defaults['guest_name'] ?? '')),
+        'contact_person'     => old($source, 'contact_person', (string)($defaults['contact_person'] ?? '')),
+        'even_odd'           => old($source, 'even_odd', (string)($defaults['even_odd'] ?? '')),
+        'operation_sheet'    => old($source, 'operation_sheet', (string)($defaults['operation_sheet'] ?? '')),
+        'off_day'            => old($source, 'off_day', (string)($defaults['off_day'] ?? '')),
+        'service_hour'       => old($source, 'service_hour', (string)($defaults['service_hour'] ?? '')),
+        'insurance_company'  => old($source, 'insurance_company', (string)($defaults['insurance_company'] ?? '')),
+        'insurance_price'    => old($source, 'insurance_price', (string)($defaults['insurance_price'] ?? '0')),
+        'rental_currency'    => old($source, 'rental_currency', (string)($defaults['rental_currency'] ?? 'MMK')),
+        'prepared_by'        => old($source, 'prepared_by', (string)($defaults['prepared_by'] ?? '')),
+        'invoice_sender'     => old($source, 'invoice_sender', (string)($defaults['invoice_sender'] ?? '')),
+        'checked_by'         => old($source, 'checked_by', (string)($defaults['checked_by'] ?? '')),
+        'terms_conditions'   => old($source, 'terms_conditions', (string)($defaults['terms_conditions'] ?? '')),
     ];
 }
 
@@ -343,15 +369,51 @@ function monthly_contract_validate_payload(
     array $cars,
     array $drivers,
     array $operators,
-    ?int $excludeId = null
+    ?int $excludeId = null,
+    bool $requireCustomerSelection = false
 ): array {
     $errors = [];
 
-    foreach (['customer_name', 'assignment_type', 'operator_id', 'start_date', 'end_date', 'monthly_rate', 'payment_status', 'status'] as $field) {
+    if ($requireCustomerSelection) {
+        $customerId = filter_var(
+            $contract['customer_id'],
+            FILTER_VALIDATE_INT,
+            ['options' => ['min_range' => 1]]
+        );
+        $customer = $customerId === false
+            ? null
+            : monthly_contract_find_customer($db, (int) $customerId);
+
+        if ($customer === null) {
+            $errors[] = 'Please choose a customer.';
+        } else {
+            monthly_contract_apply_customer($contract, $customer);
+        }
+    }
+
+    foreach (['customer_name', 'assignment_type', 'operator_id', 'start_date', 'end_date', 'monthly_rate', 'rental_status', 'status'] as $field) {
         if ((string) ($contract[$field] ?? '') === '') {
             $errors[] = 'Please fill in all required fields.';
             break;
         }
+    }
+
+    $monthlyRate = monthly_contract_normalize_whole_amount((string) ($contract['monthly_rate'] ?? ''));
+
+    if ($monthlyRate === null) {
+        $errors[] = 'Rental Price must be a whole number that is zero or greater.';
+    } else {
+        $contract['monthly_rate'] = $monthlyRate;
+    }
+
+    $insurancePrice = monthly_contract_normalize_whole_amount(
+        (string) ($contract['insurance_price'] ?? '')
+    );
+
+    if ($insurancePrice === null) {
+        $errors[] = 'Insurance Price must be a whole number that is zero or greater.';
+    } else {
+        $contract['insurance_price'] = $insurancePrice;
     }
 
     if ($contract['contract_no'] === '') {
@@ -370,11 +432,10 @@ function monthly_contract_validate_payload(
         $errors[] = 'Please choose a valid end date.';
     }
 
-    if (
-        monthly_contract_valid_date((string) $contract['start_date'])
-        && monthly_contract_valid_date((string) $contract['end_date'])
-        && $contract['end_date'] < $contract['start_date']
-    ) {
+    $start = DateTimeImmutable::createFromFormat('Y-m-d', $contract['start_date']);
+    $end   = DateTimeImmutable::createFromFormat('Y-m-d', $contract['end_date']);
+
+    if ($start && $end && $end < $start) {
         $errors[] = 'End date cannot be earlier than start date.';
     }
 
@@ -389,7 +450,7 @@ function monthly_contract_validate_payload(
         $errors[] = 'Please choose a valid assignment type.';
     }
 
-    if (!in_allowed_values((string) $contract['payment_status'], monthly_contract_payment_statuses())) {
+    if (!in_allowed_values((string) $contract['rental_status'], monthly_contract_rental_statuses())) {
         $errors[] = 'Please choose a valid payment status.';
     }
 
@@ -397,10 +458,17 @@ function monthly_contract_validate_payload(
         $errors[] = 'Please choose a valid contract status.';
     }
 
-    foreach (['monthly_rate' => 'Monthly rate', 'security_deposit' => 'Security deposit'] as $field => $label) {
-        if (!is_numeric($contract[$field]) || (float) $contract[$field] < 0) {
-            $errors[] = $label . ' must be zero or greater.';
-        }
+    // $contract['insurance_price']
+    //     = number_format((float)$contract['insurance_price'], 2, '.', '');
+
+    if (
+        !in_array(
+            $contract['rental_currency'],
+            ['MMK', 'USD'],
+            true
+        )
+    ) {
+        $contract['rental_currency'] = 'MMK';
     }
 
     $finalCarId = null;
@@ -506,10 +574,134 @@ function monthly_contract_validate_payload(
     $contract['car_id'] = $finalCarId;
     $contract['driver_id'] = $finalDriverId;
     $contract['operator_id'] = $finalOperatorId;
-    $contract['monthly_rate'] = number_format((float) $contract['monthly_rate'], 2, '.', '');
-    $contract['security_deposit'] = number_format((float) $contract['security_deposit'], 2, '.', '');
+    $contract['monthly_rate'] = number_format((float) ($contract['monthly_rate'] ?? 0), 2, '.', '');
+    $contract['insurance_price'] = number_format((float) ($contract['insurance_price'] ?? 0), 2, '.', '');
 
     return $errors;
+}
+
+/**
+ * Return a canonical, non-decimal amount or null for invalid input.
+ * Commas are accepted because the form formats prices for readability.
+ */
+function monthly_contract_normalize_whole_amount(string $amount): ?string
+{
+    $normalized = str_replace(',', '', trim($amount));
+
+    if ($normalized === '' || !preg_match('/^\d+$/', $normalized)) {
+        return null;
+    }
+
+    $normalized = ltrim($normalized, '0');
+
+    return $normalized === '' ? '0' : $normalized;
+}
+
+function monthly_contract_customers_for_select(mysqli $db): array
+{
+    $customers = [];
+    $result = $db->query(
+        "SELECT
+            id,
+            company_name,
+            guest_name,
+            contact_person,
+            contact_phone,
+            contact_email,
+            customer_address,
+            off_day,
+            service_hour,
+            customer_status
+         FROM customers
+         ORDER BY company_name ASC, guest_name ASC, id ASC"
+    );
+
+    if (!$result instanceof mysqli_result) {
+        return $customers;
+    }
+
+    while ($customer = $result->fetch_assoc()) {
+        $customers[] = $customer;
+    }
+
+    $result->free();
+
+    return $customers;
+}
+
+function monthly_contract_find_customer(mysqli $db, int $customerId): ?array
+{
+    $statement = $db->prepare(
+        "SELECT
+            id,
+            company_name,
+            guest_name,
+            contact_person,
+            contact_phone,
+            contact_email,
+            customer_address,
+            off_day,
+            service_hour
+         FROM customers
+         WHERE id = ?
+         LIMIT 1"
+    );
+
+    if (!$statement instanceof mysqli_stmt) {
+        return null;
+    }
+
+    $statement->bind_param('i', $customerId);
+    $statement->execute();
+    $customer = $statement->get_result()->fetch_assoc() ?: null;
+    $statement->close();
+
+    return is_array($customer) ? $customer : null;
+}
+
+function monthly_contract_apply_customer(array &$contract, array $customer): void
+{
+    $contract['customer_id'] = (int) $customer['id'];
+
+    $customerFields = [
+        'customer_name' => 'company_name',
+        'guest_name' => 'guest_name',
+        'contact_person' => 'contact_person',
+        'customer_phone' => 'contact_phone',
+        'customer_email' => 'contact_email',
+        'customer_address' => 'customer_address',
+        'off_day' => 'off_day',
+        'service_hour' => 'service_hour',
+    ];
+
+    foreach ($customerFields as $contractField => $customerField) {
+        if (trim((string) ($contract[$contractField] ?? '')) === '') {
+            $contract[$contractField] = trim((string) ($customer[$customerField] ?? ''));
+        }
+    }
+}
+
+function monthly_contract_sync_customer_status(mysqli $db, ?int $customerId, string $contractStatus): bool
+{
+    if ($customerId === null || $customerId <= 0 || $contractStatus !== 'Active') {
+        return true;
+    }
+
+    $statement = $db->prepare(
+        "UPDATE customers
+         SET customer_status = 'Active'
+         WHERE id = ?"
+    );
+
+    if (!$statement instanceof mysqli_stmt) {
+        return false;
+    }
+
+    $statement->bind_param('i', $customerId);
+    $success = $statement->execute();
+    $statement->close();
+
+    return $success;
 }
 
 function monthly_contract_find(mysqli $db, int $id): ?array
@@ -576,7 +768,7 @@ function monthly_contract_resource_conflict(
 function monthly_contract_next_number(mysqli $db, ?string $date = null): string
 {
     $contractDate = $date !== null && monthly_contract_valid_date($date)
-        ? new DateTimeImmutable($date)
+        ? DateTimeImmutable::createFromFormat('Y-m-d', $date)
         : new DateTimeImmutable('today');
 
     $prefix = 'MC-' . $contractDate->format('Ym') . '-';

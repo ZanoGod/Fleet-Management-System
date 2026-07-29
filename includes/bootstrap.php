@@ -15,7 +15,7 @@ if (is_dir($sessionPath) && is_writable($sessionPath)) {
 // HARDENING: Inject secure directives before starting the session
 session_start([
     'cookie_lifetime' => 0,                      // Ends when the browser closes
-    'cookie_secure'   => isset($_SERVER['HTTPS']),// True if running on HTTPS
+    'cookie_secure'   => isset($_SERVER['HTTPS']), // True if running on HTTPS
     'cookie_httponly' => true,                   // Blocks JavaScript cookie theft (XSS mitigation)
     'cookie_samesite' => 'Strict'                 // Blocks CSRF context requests
 ]);
@@ -25,28 +25,26 @@ session_start([
 // ==========================================
 $currentPage = basename($_SERVER['PHP_SELF']);
 
-// If they are not logged in, and they are NOT on the login page, kick them out to login.php
-// if (empty($_SESSION['admin_logged_in']) && $currentPage !== 'login.php') {
-//     header('Location: login.php');
-    
-//     exit;
-// }
+// Allow these pages without logging in
+$publicPages = [
+    'login.php',
+    'logout.php'
+];
 
-// // Check if user agent unexpectedly changes mid-session
-// if (isset($_SESSION['admin_logged_in'])) {
-//     if (!isset($_SESSION['user_agent']) || $_SESSION['user_agent'] !== $_SERVER['HTTP_USER_AGENT']) {
-//         // Clear session and force re-login
-//         $_SESSION = [];
-//         session_destroy();
-//         header('Location: login.php');
-//         exit;
-//     }
-// }
+if (
+    !isset($_SESSION['admin_logged_in']) ||
+    $_SESSION['admin_logged_in'] !== true
+) {
+    if (!in_array($currentPage, $publicPages, true)) {
+        $_SESSION['flash'] = [
+            'type' => 'warning',
+            'message' => 'Please log in to access the system.'
+        ];
 
-// if (empty($_SESSION['admin_logged_in']) && $currentPage !== 'login.php') {
-//     redirect('login.php');
-// }
-
+        header('Location: /fleet-management/login.php');
+        exit;
+    }
+}
 
 if (isset($_SESSION['admin_logged_in'])) {
     if (
@@ -403,8 +401,23 @@ function ensure_monthly_contract_schema(mysqli $db): void
         $db->query('ALTER TABLE monthly_contracts ADD operator_name VARCHAR(150) NULL AFTER operator_id');
     }
 
+    if (
+        schema_table_exists($db, 'customers')
+        && schema_column($db, 'monthly_contracts', 'customer_id') === null
+    ) {
+        $db->query('ALTER TABLE monthly_contracts ADD customer_id INT UNSIGNED NULL AFTER contract_no');
+    }
+
     if (!schema_index_exists($db, 'monthly_contracts', 'idx_monthly_contracts_operator_id')) {
         $db->query('ALTER TABLE monthly_contracts ADD INDEX idx_monthly_contracts_operator_id (operator_id)');
+    }
+
+    if (
+        schema_table_exists($db, 'customers')
+        && !schema_index_exists($db, 'monthly_contracts', 'idx_monthly_contracts_customer_id')
+        && !schema_constraint_exists($db, 'monthly_contracts', 'fk_monthly_contract_customer')
+    ) {
+        $db->query('ALTER TABLE monthly_contracts ADD INDEX idx_monthly_contracts_customer_id (customer_id)');
     }
 
     $db->query(
@@ -469,6 +482,20 @@ function ensure_monthly_contract_schema(mysqli $db): void
         }
     }
 
+    if (
+        schema_table_exists($db, 'customers')
+        && !schema_constraint_exists($db, 'monthly_contracts', 'fk_monthly_contracts_customer')
+        && !schema_constraint_exists($db, 'monthly_contracts', 'fk_monthly_contract_customer')
+    ) {
+        $db->query(
+            'ALTER TABLE monthly_contracts
+             ADD CONSTRAINT fk_monthly_contracts_customer
+             FOREIGN KEY (customer_id) REFERENCES customers(id)
+             ON UPDATE CASCADE
+             ON DELETE SET NULL'
+        );
+    }
+
     if (!schema_constraint_exists($db, 'monthly_contracts', 'fk_monthly_contracts_parent')) {
         $db->query(
             'ALTER TABLE monthly_contracts
@@ -486,6 +513,33 @@ function ensure_monthly_contract_schema(mysqli $db): void
          WHERE mc.operator_id IS NOT NULL
            AND (mc.operator_name IS NULL OR mc.operator_name = '')"
     );
+
+    if (schema_table_exists($db, 'customers')) {
+        // Older contracts stored only a customer-name snapshot. Link them when
+        // there is exactly one matching customer so status synchronisation and
+        // delete protection work without guessing between duplicate names.
+        $db->query(
+            "UPDATE monthly_contracts AS mc
+             INNER JOIN (
+                SELECT MIN(id) AS id, company_name
+                FROM customers
+                WHERE company_name IS NOT NULL
+                  AND company_name <> ''
+                GROUP BY company_name
+                HAVING COUNT(*) = 1
+             ) AS customer_match ON customer_match.company_name = mc.customer_name
+             SET mc.customer_id = customer_match.id
+             WHERE mc.customer_id IS NULL"
+        );
+
+        $db->query(
+            "UPDATE customers AS c
+             INNER JOIN monthly_contracts AS mc ON mc.customer_id = c.id
+             SET c.customer_status = 'Active'
+             WHERE mc.status = 'Active'
+               AND c.customer_status <> 'Active'"
+        );
+    }
 }
 
 function ensure_schema(mysqli $db): void

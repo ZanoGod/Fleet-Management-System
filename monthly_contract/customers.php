@@ -16,7 +16,13 @@ $pageSummary = 'Review customers connected to monthly contract records.';
 $pageActions = '<a class="btn btn-accent" href="customers_add.php">Add Customer</a>';
 $pageStyles = ['assets/css/customers.css', 'assets/css/monthly-contracts.css'];
 
-$filters = monthly_contract_filters($_GET);
+$filters = [
+    'search' => trim($_GET['search'] ?? ''),
+    'status' => trim($_GET['status'] ?? ''),
+    'assignment_type' => trim($_GET['assignment_type'] ?? ''),
+    'rental_status' => trim($_GET['rental_status'] ?? ''),
+    'expiry' => trim($_GET['expiry'] ?? ''),
+];
 $customers = [];
 $stats = [
     'records' => 0,
@@ -32,19 +38,27 @@ if ($db instanceof mysqli) {
     if ($filters['search'] !== '') {
 
         $where[] = "(
-        company_name LIKE ?
-        OR guest_name LIKE ?
-        OR contact_person LIKE ?
-        OR contact_phone LIKE ?
-        OR contact_email LIKE ?
-    )";
+    company_name LIKE ?
+    OR guest_name LIKE ?
+    OR contact_person LIKE ?
+    OR contact_phone LIKE ?
+    OR contact_email LIKE ?
+    OR customer_address LIKE ?
+    OR off_day LIKE ?
+    OR service_hour LIKE ?
+    OR remark LIKE ?
+)";
 
         $search = '%' . $filters['search'] . '%';
 
-        $types .= 'sssss';
+        $types .= 'sssssssss';
 
         array_push(
             $params,
+            $search,
+            $search,
+            $search,
+            $search,
             $search,
             $search,
             $search,
@@ -58,18 +72,46 @@ if ($db instanceof mysqli) {
         $types .= 's';
         $params[] = $filters['status'];
     }
+    if ($filters['assignment_type'] !== '') {
+        $where[] = 'mc.assignment_type = ?';
+        $types .= 's';
+        $params[] = $filters['assignment_type'];
+    }
+
+    if ($filters['rental_status'] !== '') {
+        $where[] = 'mc.rental_status = ?';
+        $types .= 's';
+        $params[] = $filters['rental_status'];
+    }
+
+    if ($filters['expiry'] === 'expiring') {
+        $where[] = "mc.end_date BETWEEN CURDATE()
+                AND DATE_ADD(CURDATE(), INTERVAL 30 DAY)";
+    }
+
+    if ($filters['expiry'] === 'expired') {
+        $where[] = "mc.end_date < CURDATE()";
+    }
 
     $sql = "
 SELECT
-    id,
-    company_name,
-    guest_name,
-    contact_person,
-    contact_phone,
-    contact_email,
-    customer_status,
-    remark
-FROM customers
+    c.id,
+    c.company_name,
+    c.guest_name,
+    c.contact_person,
+    c.contact_phone,
+    c.contact_email,
+    c.customer_address,
+    c.off_day,
+    c.service_hour,
+    c.customer_status,
+    c.remark,
+    mc.assignment_type,
+    mc.rental_status,
+    mc.end_date
+FROM customers c
+LEFT JOIN monthly_contracts mc
+    ON mc.customer_id = c.id
 ";
 
     if ($where !== []) {
@@ -146,7 +188,7 @@ require __DIR__ . '/../includes/messages.php';
             <label for="status" class="form-label">Status</label>
             <select class="form-select" id="status" name="status">
                 <option value="">All Statuses</option>
-                <?php foreach (monthly_contract_statuses() as $status): ?>
+                <?php foreach (['Active', 'Inactive'] as $status): ?>
                     <option value="<?= e($status) ?>" <?= selected($filters['status'], $status) ?>><?= e($status) ?></option>
                 <?php endforeach; ?>
             </select>
@@ -161,11 +203,13 @@ require __DIR__ . '/../includes/messages.php';
             </select>
         </div>
         <div>
-            <label for="payment_status" class="form-label">Payment</label>
-            <select class="form-select" id="payment_status" name="payment_status">
-                <option value="">All Payments</option>
-                <?php foreach (monthly_contract_payment_statuses() as $paymentStatus): ?>
-                    <option value="<?= e($paymentStatus) ?>" <?= selected($filters['payment_status'], $paymentStatus) ?>><?= e($paymentStatus) ?></option>
+            <label for="rental_status" class="form-label">Rental</label>
+            <select class="form-select" id="rental_status" name="rental_status">
+                <option value="">Rental Status</option>
+                <?php foreach (monthly_contract_rental_statuses() as $rentalStatus): ?>
+                    <option value="<?= e($rentalStatus) ?>" <?= selected($filters['rental_status'], $rentalStatus) ?>>
+                        <?= e($rentalStatus) ?>
+                    </option>
                 <?php endforeach; ?>
             </select>
         </div>
@@ -177,16 +221,15 @@ require __DIR__ . '/../includes/messages.php';
                 <option value="expired" <?= selected($filters['expiry'], 'expired') ?>>Expired</option>
             </select>
         </div>
-        <div>
-            <label for="date_from" class="form-label">Start From</label>
-            <input type="date" class="form-control" id="date_from" name="date_from" value="<?= e($filters['date_from']) ?>">
-        </div>
-        <div>
-            <label for="date_to" class="form-label">End To</label>
-            <input type="date" class="form-control" id="date_to" name="date_to" value="<?= e($filters['date_to']) ?>">
-        </div>
-        <div class="d-grid align-self-end">
-            <button type="submit" class="btn btn-shell">Filter</button>
+
+        <div class="d-flex gap-2 align-self-end">
+            <button type="submit" class="btn btn-shell">
+                Filter
+            </button>
+
+            <button type="button" class="btn btn-outline-dark" id="resetFilters">
+                Reset
+            </button>
         </div>
     </form>
 </section>
@@ -197,6 +240,8 @@ require __DIR__ . '/../includes/messages.php';
             <h2>Customer Contract List</h2>
             <p><?= e((string) count($customers)) ?> customer contract records found.</p>
         </div>
+        <button type="button" class="btn btn-shell btn-sm" data-fullscreen-target="monthlyCustomersResultsSection">Fullscreen Table</button>
+
     </div>
 
     <div class="table-responsive" id="monthlyCustomersResultsSection">
@@ -209,6 +254,9 @@ require __DIR__ . '/../includes/messages.php';
                     <th>Contact Person</th>
                     <th>Phone</th>
                     <th>Email</th>
+                    <th>Address</th>
+                    <th>Off Day</th>
+                    <th>Service Hour</th>
                     <th>Status</th>
                     <th>Remark</th>
                     <th width="120">Action</th>
@@ -220,11 +268,10 @@ require __DIR__ . '/../includes/messages.php';
                 <?php if (empty($customers)): ?>
 
                     <tr>
-                        <td colspan="9" class="text-center py-5 text-muted">
+                        <td colspan="12" class="text-center py-5 text-muted">
                             No customers found.
                         </td>
                     </tr>
-
                 <?php else: ?>
 
                     <?php foreach ($customers as $index => $customer): ?>
@@ -255,12 +302,26 @@ require __DIR__ . '/../includes/messages.php';
                                 <?= e($customer['contact_email'] ?: '-') ?>
                             </td>
 
-                            <td class="text-center">
+                            <td class="customer-address">
+                                <?= e($customer['customer_address'] ?: '-') ?>
+                            </td>
 
+                            <td>
+                                <span class="offday-pill">
+                                    <?= e($customer['off_day'] ?: '-') ?>
+                                </span>
+                            </td>
+
+                            <td>
+                                <span class="service-pill">
+                                    <?= e($customer['service_hour'] ?: '-') ?>
+                                </span>
+                            </td>
+
+                            <td class="text-center">
                                 <span class="customer-status <?= strtolower($customer['customer_status']) ?>">
                                     <?= e($customer['customer_status']) ?>
                                 </span>
-
                             </td>
 
                             <td class="customer-remark">

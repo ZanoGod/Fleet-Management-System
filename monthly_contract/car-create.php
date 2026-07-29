@@ -74,13 +74,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $car['note']
             );
 
-            if ($statement->execute()) {
-                $statement->close();
-                set_flash('success', 'Monthly vehicle added successfully.');
-                redirect('monthly-contract-cars.php');
+            try {
+
+                if ($statement->execute()) {
+                    $statement->close();
+                    set_flash('success', 'Monthly vehicle added successfully.');
+                    redirect('contract_cars.php');
+                }
+            } catch (mysqli_sql_exception $e) {
+
+                if ($e->getCode() == 1062) {
+                    $errors[] = 'This plate number already exists. Please use another plate number.';
+                } else {
+                    $errors[] = 'Database Error: ' . $e->getMessage();
+                }
             }
 
-            $errors[] = 'Unable to save the monthly vehicle. Plate number may already exist.';
             $statement->close();
         }
     }

@@ -212,7 +212,7 @@ function driver_statuses(): array
 function monthly_contract_assignment_types(): array
 {
     return [
-        'Customer Only',
+        'Driver Only',
         'Vehicle Only',
         'Vehicle and Driver',
     ];
@@ -229,12 +229,13 @@ function monthly_contract_statuses(): array
     ];
 }
 
-function monthly_contract_payment_statuses(): array
+function monthly_contract_rental_statuses(): array
 {
     return [
-        'Pending',
-        'Paid',
-        'Overdue',
+        'Including fuel',
+        'Excluding fuel',
+        'Car only',
+        'Driver only',
     ];
 }
 
@@ -410,12 +411,12 @@ function monthly_contract_status_badge_class(string $status): string
     };
 }
 
-function monthly_contract_payment_badge_class(string $status): string
-{
-    return match (strtolower($status)) {
-        'paid' => 'resource-available',
-        'overdue' => 'status-pending',
-        default => 'resource-assigned',
+function monthly_contract_rental_badge_class(string $status): string {
+    return match (trim($status)) {
+        'Including fuel'         => 'rental-success',
+        'Excluding fuel'          => 'rental-pending',
+        'Driver only'            => 'rental-info',
+        default                  => 'rental-default',
     };
 }
 
@@ -527,23 +528,53 @@ function fetch_drivers_for_select(mysqli $db): array
     return $drivers;
 }
 
-function fetch_monthly_cars_for_select(mysqli $db, bool $availableOnly = false): array
-{
+function fetch_monthly_cars_for_select(
+    mysqli $db,
+    bool $availableOnly = false,
+    ?int $includeCarId = null
+): array {
     $cars = [];
-    $sql = 'SELECT id, car_type, plate_no, model_name, availability_status FROM monthly_cars';
+    $sql = 'SELECT c.id, c.car_type, c.plate_no, c.model_name, c.availability_status FROM monthly_cars AS c';
+    $types = '';
+    $params = [];
 
     if ($availableOnly) {
-        $sql .= " WHERE availability_status = 'Available'";
-    }
+        $availableCondition = "c.availability_status = 'Available'
+            AND NOT EXISTS (
+                SELECT 1
+                FROM monthly_contracts AS mc
+                WHERE mc.car_id = c.id
+                  AND mc.status IN ('Draft', 'Active')
+            )";
 
-    $sql .= ' ORDER BY car_type ASC, plate_no ASC';
-    $result = $db->query($sql);
-
-    if ($result instanceof mysqli_result) {
-        while ($row = $result->fetch_assoc()) {
-            $cars[] = $row;
+        if ($includeCarId !== null && $includeCarId > 0) {
+            $sql .= ' WHERE (' . $availableCondition . ' OR c.id = ?)';
+            $types = 'i';
+            $params[] = $includeCarId;
+        } else {
+            $sql .= ' WHERE ' . $availableCondition;
         }
     }
+
+    $sql .= ' ORDER BY c.car_type ASC, c.plate_no ASC';
+    $statement = $db->prepare($sql);
+
+    if (!$statement instanceof mysqli_stmt) {
+        return $cars;
+    }
+
+    if ($params !== []) {
+        bind_statement_params($statement, $types, $params);
+    }
+
+    $statement->execute();
+    $result = $statement->get_result();
+
+    while ($row = $result->fetch_assoc()) {
+        $cars[] = $row;
+    }
+
+    $statement->close();
 
     return $cars;
 }

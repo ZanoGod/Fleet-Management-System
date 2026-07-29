@@ -347,6 +347,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 <body>
 
+<?php if (isset($_SESSION['flash'])) : ?>
+    <?php
+    $flash = $_SESSION['flash'];
+    unset($_SESSION['flash']);
+
+    $class = $flash['type'] === 'success'
+        ? 'alert-success'
+        : 'alert-warning';
+    ?>
+
+    <div class="container position-fixed top-0 start-50 translate-middle-x mt-3"
+         style="z-index:9999; max-width:500px;">
+
+        <div class="alert <?= $class ?> alert-dismissible fade show shadow" role="alert">
+            <?= htmlspecialchars($flash['message']) ?>
+
+            <button
+                type="button"
+                class="btn-close"
+                data-bs-dismiss="alert">
+            </button>
+        </div>
+
+    </div>
+
+<?php endif; ?>
     <div class="login-card">
 
         <div class="login-brand-wrapper">
@@ -476,6 +502,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         });
     </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+
+
+<script>
+setTimeout(() => {
+    const alert = document.querySelector('.alert');
+
+    if (alert) {
+        const bsAlert = bootstrap.Alert.getOrCreateInstance(alert);
+        bsAlert.close();
+    }
+}, 3000);
+</script>
+
 
 </body>
 

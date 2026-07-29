@@ -20,10 +20,6 @@ $assignmentNoteBody = $assignmentNoteBody ?? 'Contract number, vehicle, driver, 
 $assignmentNoteLinkUrl = $assignmentNoteLinkUrl ?? 'monthly-contracts.php';
 $assignmentNoteLinkText = $assignmentNoteLinkText ?? 'Monthly Contracts';
 
-$customerStatuses = [
-    'Active',
-    'Inactive',
-];
 ?>
 
 <div class="card-shell form-card">
@@ -71,7 +67,6 @@ $customerStatuses = [
                 <label for="guest_name" class="form-label">
                     Guest Name
                 </label>
-
                 <input
                     type="text"
                     class="form-control"
@@ -112,30 +107,52 @@ $customerStatuses = [
                 </label>
 
                 <input
-                    type="email"
+                    type="text"
                     class="form-control"
                     id="contact_email"
                     name="contact_email"
                     value="<?= e($customer['contact_email'] ?? '') ?>">
             </div>
 
+            <div class="col-12">
+                <label for="customer_address" class="form-label">
+                    Customer Address
+                </label>
+                <textarea
+                    class="form-control"
+                    id="customer_address"
+                    name="customer_address"
+                    rows="2"
+                    placeholder="Company or customer address"><?= e($customer['customer_address'] ?? '') ?></textarea>
+            </div>
+            <?php
+            $offDayOptions = [
+                'Public Holidays',
+                'Sunday & Public Holidays',
+                'Sat, Sun & Public Holidays',
+                'Sat or Sun & Public Holidays',
+                'Once a week',
+            ];
+            ?>
             <div class="col-md-6">
-                <label for="customer_status" class="form-label">
-                    Status
+                <label for="off_day" class="form-label">
+                    Off Day
                 </label>
 
                 <select
                     class="form-select"
-                    id="customer_status"
-                    name="customer_status">
+                    id="off_day"
+                    name="off_day">
 
-                    <?php foreach ($customerStatuses as $status): ?>
+                    <option value="">- - Select Off Day - -</option>
+
+                    <?php foreach ($offDayOptions as $option): ?>
 
                         <option
-                            value="<?= e($status) ?>"
-                            <?= selected($customer['customer_status'] ?? 'Active', $status) ?>>
+                            value="<?= e($option) ?>"
+                            <?= selected($customer['off_day'] ?? '', $option) ?>>
 
-                            <?= e($status) ?>
+                            <?= e($option) ?>
 
                         </option>
 
@@ -143,12 +160,24 @@ $customerStatuses = [
 
                 </select>
             </div>
+            <div class="col-md-6">
+                <label for="service_hour" class="form-label">
+                    Service Hour
+                </label>
+
+                <input
+                    type="text"
+                    class="form-control"
+                    id="service_hour"
+                    name="service_hour"
+                    placeholder="09:00 AM - 06:00 PM or 10 hour"
+                    value="<?= e($customer['service_hour'] ?? '') ?>">
+            </div>
 
             <div class="col-12">
                 <label for="remark" class="form-label">
                     Remark
                 </label>
-
                 <textarea
                     class="form-control"
                     id="remark"

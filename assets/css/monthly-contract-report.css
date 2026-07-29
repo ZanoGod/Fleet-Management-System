@@ -1,0 +1,189 @@
+/* ==========================================
+   Monthly Contract Reports Table & Scroll Bar
+   ========================================== */
+
+/* Main Scrollable Table Wrapper */
+.report-table-wrapper {
+    width: 100%;
+    overflow-x: auto !important;
+    overflow-y: hidden;
+    border: 1px solid #E8DCCF;
+    border-radius: 12px;
+    background-color: #FFFFFF;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+    margin-top: 1rem;
+    display: block;
+}
+
+/* Custom Horizontal Scrollbar Styling */
+.report-table-wrapper::-webkit-scrollbar {
+    height: 10px;
+}
+.report-table-wrapper::-webkit-scrollbar-track {
+    background: #F5EFEB;
+    border-radius: 0 0 12px 12px;
+}
+.report-table-wrapper::-webkit-scrollbar-thumb {
+    background: #A38C7A;
+    border-radius: 6px;
+}
+.report-table-wrapper::-webkit-scrollbar-thumb:hover {
+    background: #4F200D;
+}
+
+/* Force Table to Expand Horizontally */
+.report-table-wrapper .report-table {
+    width: max-content !important;
+    min-width: 100% !important;
+    table-layout: auto !important;
+    margin-bottom: 0;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 0.85rem;
+    color: #333333;
+}
+
+/* Table Header */
+.report-table thead th {
+    background-color: #4F200D !important;
+    color: #FFFFFF !important;
+    font-weight: 600;
+    font-size: 0.82rem;
+    text-transform: capitalize;
+    letter-spacing: 0.3px;
+    padding: 12px 16px;
+    white-space: nowrap !important;
+    border: none;
+    position: sticky;
+    top: 0;
+    z-index: 2;
+}
+
+/* Table Rows & Cells */
+.report-table tbody tr {
+    border-bottom: 1px solid #F0E8DF;
+    transition: background-color 0.15s ease-in-out;
+}
+
+.report-table tbody tr:hover {
+    background-color: #FFFDF8;
+}
+
+.report-table tbody td {
+    padding: 12px 16px;
+    vertical-align: middle;
+    color: #2D2522;
+    border-top: 1px solid #F3EBE1;
+    white-space: nowrap; /* Prevents text from squishing into vertical single letters */
+}
+
+/* Dedicated Column Width Controls */
+.col-contract        { min-width: 140px; font-weight: 600; color: #4F200D; }
+.col-customer        { min-width: 220px; max-width: 300px; white-space: normal !important; word-break: break-word; }
+.col-assignment      { min-width: 140px; text-align: center; }
+.col-vehicle         { min-width: 180px; }
+.col-driver          { min-width: 150px; }
+.col-operator        { min-width: 150px; }
+.col-dates           { min-width: 130px; line-height: 1.35; }
+.col-rate            { min-width: 120px; font-weight: 600; }
+.col-rental_status   { min-width: 120px; text-align: center; }
+.col-status          { min-width: 120px; text-align: center; }
+.col-guest_name      { min-width: 160px; }
+.col-contact_person  { min-width: 160px; }
+.col-customer_phone  { min-width: 140px; }
+.col-customer_email  { min-width: 190px; }
+.col-customer_address{ min-width: 250px; white-space: normal !important; }
+.col-even_odd        { min-width: 100px; }
+.col-operation_sheet { min-width: 130px; }
+.col-rental_currency { min-width: 100px; }
+.col-off_day         { min-width: 140px; }
+.col-service_hour    { min-width: 130px; }
+.col-insurance_company{ min-width: 160px; }
+.col-insurance_price { min-width: 130px; }
+.col-note            { min-width: 260px; max-width: 380px; white-space: normal !important; color: #665952; }
+
+/* Subtext & Dates */
+.report-guest {
+    font-weight: 600;
+    color: #2A1810;
+}
+
+.report-date-primary {
+    color: #2D2522;
+    font-weight: 500;
+}
+
+.report-date-secondary {
+    color: #8C786C;
+    font-size: 0.78rem;
+}
+
+/* Badges & Status Pills Fix */
+.resource-pill,
+.status-pill{
+    display:inline-flex !important;
+    align-items:center;
+    justify-content:center;
+
+    padding:6px 14px !important;
+
+    min-height:28px;
+    min-width:max-content;
+
+    white-space:nowrap !important;
+    word-break:normal !important;
+    overflow-wrap:normal !important;
+
+    border-radius:999px;
+    font-size:.78rem;
+    line-height:1;
+}
+
+/* Filter Selector Grid */
+.column-selector-card {
+    background-color: #FFFDF8;
+    border: 1px solid #E8DCCF;
+    border-radius: 8px;
+}
+
+.horizontal-column-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    gap: 8px 12px;
+}
+
+.col-item {
+    font-size: 0.82rem;
+    color: #4A3B32;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+}
+
+.col-item input[type="checkbox"] {
+    cursor: pointer;
+    accent-color: #4F200D;
+}
+
+/* Custom Rental Status Pills */
+.resource-pill.rental-success {
+    background-color: #108548 !important;
+    color: #ffffff !important;
+}
+
+.resource-pill.rental-pending {
+    background-color: #6c757d !important;
+    color: #ffffff !important;
+}
+
+.resource-pill.rental-info {
+    background-color: #f0ce0d !important;
+    color: #000000 !important;
+}
+
+.resource-pill.rental-default {
+    background-color: #e2e8f0 !important;
+    color: #334155 !important;
+}

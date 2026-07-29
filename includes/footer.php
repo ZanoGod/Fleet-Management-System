@@ -102,6 +102,18 @@
                         content.classList.add('is-visible');
                     }
                 });
+
+                document.getElementById('resetFilters').addEventListener('click', function() {
+                    const form = this.closest('form');
+
+                    form.querySelectorAll('input[type="text"]').forEach(input => {
+                        input.value = '';
+                    });
+
+                    form.querySelectorAll('select').forEach(select => {
+                        select.selectedIndex = 0;
+                    });
+                });
             </script>
 
             </html>

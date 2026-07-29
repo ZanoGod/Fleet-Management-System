@@ -4,7 +4,14 @@ declare(strict_types=1);
 
 session_start();
 
+session_start();
+
 $_SESSION = [];
+
+$_SESSION['flash'] = [
+    'type' => 'success',
+    'message' => 'You have been logged out successfully.'
+];
 
 if (ini_get('session.use_cookies')) {
 

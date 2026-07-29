@@ -1,24 +1,24 @@
 .monthly-contract-filter-grid {
-    display: grid;
-    grid-template-columns: 2fr 1fr 1.15fr 1fr 1fr 1fr 1fr auto;
-    gap: 0.85rem;
-    align-items: end;
+  display: grid;
+  grid-template-columns: 2fr 1fr 1.15fr 1fr 1fr 1fr 1fr auto;
+  gap: 0.85rem;
+  align-items: end;
 }
 
 .monthly-expiry-list {
-    display: grid;
-    gap: 0.75rem;
+  display: grid;
+  gap: 0.75rem;
 }
 
 .monthly-expiry-item {
-    display: grid;
-    grid-template-columns: 1fr auto auto;
-    align-items: center;
-    gap: 0.75rem;
-    padding: 0.85rem 1rem;
-    border: 1px solid rgba(79, 32, 13, 0.08);
-    border-radius: 1rem;
-    background: rgba(255, 217, 61, 0.12);
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid rgba(79, 32, 13, 0.08);
+  border-radius: 1rem;
+  background: rgba(255, 217, 61, 0.12);
 }
 
 .monthly-expiry-item strong,
@@ -26,243 +26,341 @@
 .monthly-customer,
 .monthly-money,
 .monthly-date-primary {
-    color: var(--cocoa);
-    font-weight: 800;
+  color: var(--cocoa);
+  font-weight: 800;
 }
 
 .monthly-expiry-item span {
-    display: block;
-    color: var(--cocoa);
+  display: block;
+  color: var(--cocoa);
 }
 
 .monthly-expiry-item .status-pending {
-    color: var(--cream);
-    font-weight: 800;
+  color: var(--cream);
+  font-weight: 800;
 }
+
 .monthly-contract-table {
-    width: 100%;
-    min-width: 1280px;
-    table-layout: fixed;
+  width: 100%;
+  min-width: 1720px;
+  table-layout: fixed;
+  border-collapse: collapse;
 }
 
 .monthly-contract-table thead th {
-    font-size: 0.86rem;
-    padding: 0.85rem 0.6rem;
+  font-size: 0.82rem;
+  padding: 0.85rem 0.5rem;
+  white-space: normal;
+  word-wrap: break-word;
 }
 
 .monthly-contract-table tbody td {
-    padding: 0.85rem 0.6rem;
-    vertical-align: top;
-    overflow-wrap: anywhere;
+  padding: 0.85rem 0.5rem;
+  vertical-align: top;
+  overflow-wrap: anywhere;
 }
 
+/* 1. No. */
 .monthly-contract-table th:nth-child(1),
 .monthly-contract-table td:nth-child(1) {
-    width: 11%;
+  width: 50px;
+  text-align: center;
 }
 
+/* 2. Company / Contract */
 .monthly-contract-table th:nth-child(2),
 .monthly-contract-table td:nth-child(2) {
-    width: 14%;
+  width: 220px;
 }
 
+/* 3. Car Type */
 .monthly-contract-table th:nth-child(3),
 .monthly-contract-table td:nth-child(3) {
-    width: 20%;
+  width: 120px;
 }
 
+/* 4. Car No */
 .monthly-contract-table th:nth-child(4),
 .monthly-contract-table td:nth-child(4) {
-    width: 10%;
+  width: 100px;
 }
 
+/* 5. Driver */
 .monthly-contract-table th:nth-child(5),
 .monthly-contract-table td:nth-child(5) {
-    width: 10%;
+  width: 130px;
 }
 
+/* 6. Driver Phone */
 .monthly-contract-table th:nth-child(6),
-.monthly-contract-table td:nth-child(6),
+.monthly-contract-table td:nth-child(6) {
+  width: 130px;
+}
+
+/* 7. Operation Sheet */
 .monthly-contract-table th:nth-child(7),
-.monthly-contract-table td:nth-child(7),
+.monthly-contract-table td:nth-child(7) {
+  width: 110px;
+  text-align: center;
+}
+
+/* 8. Contract Start / End Date */
 .monthly-contract-table th:nth-child(8),
 .monthly-contract-table td:nth-child(8) {
-    width: 9%;
+  width: 160px;
 }
 
+/* 9. Off Day */
 .monthly-contract-table th:nth-child(9),
 .monthly-contract-table td:nth-child(9) {
-    width: 18%;
+  width: 160px;
 }
 
-.monthly-assignment-stack {
-    display: flex;
-    align-items: flex-start;
-    flex-direction: column;
-    gap: 0.32rem;
+/* 10. Service Hour */
+.monthly-contract-table th:nth-child(10),
+.monthly-contract-table td:nth-child(10) {
+  width: 140px;
 }
 
-.monthly-resource-pill {
-    max-width: 100%;
-    justify-content: flex-start;
-    text-align: left;
-    white-space: normal;
-    line-height: 1.18;
-    padding: 0.35rem 0.62rem;
-    font-size: 0.78rem;
+/* 11. Rental Price */
+.monthly-contract-table th:nth-child(11),
+.monthly-contract-table td:nth-child(11) {
+  width: 130px;
+  text-align: right;
+}
+
+/* 12. Status */
+.monthly-contract-table th:nth-child(12),
+.monthly-contract-table td:nth-child(12) {
+  width: 110px;
+  text-align: center;
+}
+
+/* 13. Action */
+.monthly-contract-table th:nth-child(13),
+.monthly-contract-table td:nth-child(13) {
+  width: 180px;
 }
 
 .monthly-contract-table .resource-pill,
 .monthly-contract-table .status-pill {
-    max-width: 100%;
-    text-align: center;
-    white-space: normal;
-    line-height: 1.18;
-    padding: 0.35rem 0.62rem;
-    font-size: 0.78rem;
+  max-width: 100%;
+  text-align: center;
+  white-space: normal;
+  line-height: 1.18;
+  padding: 0.35rem 0.62rem;
+  font-size: 0.78rem;
 }
 
 .monthly-actions {
-    align-items: stretch;
-    flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.35rem;
+}
+
+.monthly-actions form,
+.monthly-actions .btn {
+  width: 100%;
+}
+
+.btn-delete {
+  color: #b42318;
+  border: 1px solid #b42318;
+  background: #fff;
+}
+
+.btn-delete:hover {
+  background: #b42318;
+  color: #fff;
 }
 
 .monthly-actions .btn {
-    min-width: 4.8rem;
+  width: 100%;
+  min-width: 0;
+  padding: 0.42rem 0.55rem;
+  font-size: 0.78rem;
+  text-align: center;
+}
+
+.monthly-actions form {
+  margin: 0;
 }
 
 .monthly-pagination {
-    margin-top: 1rem;
+  margin-top: 1rem;
 }
 
 .monthly-pagination .page-link {
-    border-color: rgba(79, 32, 13, 0.12);
-    color: var(--cocoa);
-    font-weight: 700;
+  border-color: rgba(79, 32, 13, 0.12);
+  color: var(--cocoa);
+  font-weight: 700;
 }
 
 .monthly-pagination .page-item.active .page-link {
-    background: var(--cocoa);
-    border-color: var(--cocoa);
-    color: var(--cream);
+  background: var(--cocoa);
+  border-color: var(--cocoa);
+  color: var(--cream);
 }
 
 .contract-field-muted {
-    opacity: 0.55;
+  opacity: 0.55;
 }
 
 .contract-field-muted select {
-    cursor: not-allowed;
+  cursor: not-allowed;
 }
 
 @media (max-width: 1399.98px) {
-    .monthly-contract-filter-grid {
-        grid-template-columns: repeat(4, minmax(0, 1fr));
-    }
+  .monthly-contract-filter-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 991.98px) {
-    .monthly-contract-filter-grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
+  .monthly-contract-filter-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 
-    .monthly-expiry-item {
-        grid-template-columns: 1fr;
-    }
+  .monthly-expiry-item {
+    grid-template-columns: 1fr;
+  }
 
-    .monthly-contract-table {
-        table-layout: auto;
-    }
+  .monthly-contract-table {
+    table-layout: auto;
+  }
 }
 
 @media (max-width: 767.98px) {
-    .monthly-contract-filter-grid {
-        grid-template-columns: 1fr;
-    }
+  .monthly-contract-filter-grid {
+    grid-template-columns: 1fr;
+  }
 
-    .monthly-contract-table,
-    .monthly-contract-table tbody,
-    .monthly-contract-table tr,
-    .monthly-contract-table td {
-        display: block;
-        width: 100%;
-        min-width: 0;
-    }
+  .monthly-contract-table,
+  .monthly-contract-table tbody,
+  .monthly-contract-table tr,
+  .monthly-contract-table td {
+    display: block;
+    width: 100%;
+    min-width: 0;
+  }
 
-    .monthly-contract-table thead {
-        display: none;
-    }
+  .monthly-contract-table thead {
+    display: none;
+  }
 
-    .monthly-contract-table tbody tr {
-        margin-bottom: 0.9rem;
-        padding: 0.85rem;
-        border: 1px solid rgba(79, 32, 13, 0.1);
-        border-radius: 1rem;
-        background: rgba(255, 253, 249, 0.96);
-    }
+  .monthly-contract-table tbody tr {
+    margin-bottom: 0.9rem;
+    padding: 0.85rem;
+    border: 1px solid rgba(79, 32, 13, 0.1);
+    border-radius: 1rem;
+    background: rgba(255, 253, 249, 0.96);
+  }
 
-    .monthly-contract-table tbody td {
-        display: grid;
-        grid-template-columns: minmax(7rem, 34%) 1fr;
-        gap: 0.75rem;
-        padding: 0.45rem 0;
-        border: 0;
-    }
+  .monthly-contract-table tbody td {
+    display: grid;
+    grid-template-columns: minmax(7rem, 34%) 1fr;
+    gap: 0.75rem;
+    padding: 0.45rem 0;
+    border: 0;
+  }
 
-    .monthly-contract-table tbody td::before {
-        color: var(--cocoa);
-        font-size: 0.75rem;
-        font-weight: 800;
-        letter-spacing: 0.04em;
-        text-transform: uppercase;
-    }
+  .monthly-contract-table tbody td::before {
+    color: var(--cocoa);
+    font-size: 0.75rem;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
 
-    .monthly-contract-table tbody td:nth-child(1)::before {
-        content: "Contract";
-    }
+  .monthly-contract-table tbody td:nth-child(1)::before {
+    content: "No.";
+  }
 
-    .monthly-contract-table tbody td:nth-child(2)::before {
-        content: "Customer";
-    }
+  .monthly-contract-table tbody td:nth-child(2)::before {
+    content: "Company";
+  }
 
-    .monthly-contract-table tbody td:nth-child(3)::before {
-        content: "Assignment";
-    }
+  .monthly-contract-table tbody td:nth-child(3)::before {
+    content: "Car Type";
+  }
 
-    .monthly-contract-table tbody td:nth-child(4)::before {
-        content: "Dates";
-    }
+  .monthly-contract-table tbody td:nth-child(4)::before {
+    content: "Car No";
+  }
 
-    .monthly-contract-table tbody td:nth-child(5)::before {
-        content: "Rate";
-    }
+  .monthly-contract-table tbody td:nth-child(5)::before {
+    content: "Driver";
+  }
 
-    .monthly-contract-table tbody td:nth-child(6)::before {
-        content: "Payment";
-    }
+  .monthly-contract-table tbody td:nth-child(6)::before {
+    content: "Phone";
+  }
 
-    .monthly-contract-table tbody td:nth-child(7)::before {
-        content: "Status";
-    }
+  .monthly-contract-table tbody td:nth-child(7)::before {
+    content: "Operation";
+  }
 
-    .monthly-contract-table tbody td:nth-child(8)::before {
-        content: "Expiry";
-    }
+  .monthly-contract-table tbody td:nth-child(8)::before {
+    content: "Contract Dates";
+  }
 
-    .monthly-contract-table tbody td:nth-child(9)::before {
-        content: "Action";
-    }
+  .monthly-contract-table tbody td:nth-child(9)::before {
+    content: "Off Day";
+  }
 
-    .monthly-contract-table tbody td[colspan] {
-        display: block;
-        text-align: center;
-    }
+  .monthly-contract-table tbody td:nth-child(10)::before {
+    content: "Service Hour";
+  }
 
-    .monthly-contract-table tbody td[colspan]::before {
-        content: "";
-    }
+  .monthly-contract-table tbody td:nth-child(11)::before {
+    content: "Rental";
+  }
 
-    .monthly-actions {
-        justify-content: flex-start;
-    }
+  .monthly-contract-table tbody td:nth-child(12)::before {
+    content: "Status";
+  }
+
+  .monthly-contract-table tbody td:nth-child(13)::before {
+    content: "Action";
+  }
+
+  .monthly-contract-table tbody td[colspan] {
+    display: block;
+    text-align: center;
+  }
+
+  .monthly-contract-table tbody td[colspan]::before {
+    content: "";
+  }
+
+  .monthly-actions {
+    justify-content: flex-start;
+  }
+}
+
+.section-card {
+  height: 100%;
+}
+
+.section-card strong {
+  display: block;
+  margin-bottom: 0.25rem;
+  color: #64748b;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.section-card .row > div {
+  margin-bottom: 0.5rem;
+}
+
+.bg-light {
+  background: #f8fafc !important;
+}
+
+@media (min-width: 992px) {
+  .section-card {
+    min-height: 100%;
+  }
 }

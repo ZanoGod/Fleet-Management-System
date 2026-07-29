@@ -1,9 +1,6 @@
 Need to fix the Dashboard-> table and data. entities .. and add view button.. 
 add customers to fix and to select.. 
 and need to fix the reports.. data entites..
-
-
-
         modified:   .hintrc
         modified:   README.md
         new file:   assets/css/customers.css
@@ -43,8 +40,6 @@ and need to fix the reports.. data entites..
         renamed:    includes/monthly_contracts_export_excel.php -> monthly_contract/monthly_contracts_export_excel.php
         renamed:    includes/monthly_contracts_export_pdf.php -> monthly_contract/monthly_contracts_export_pdf.php
         modified:   operator-create.php
-
-
         
 # Fleet Management System
 

@@ -173,7 +173,6 @@ if (is_string($pageStyles)) {
             <!-- FOOTER -->
             <div class="sidebar-footer">
 
-
                 <form
                     class="logout-form"
                     action="<?= e(asset_url('logout.php')) ?>"

@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+
 require_once __DIR__ . '/../includes/bootstrap.php';
 require_once __DIR__ . '/monthly-contracts-data.php';
 
@@ -98,7 +99,7 @@ require __DIR__ . '/../includes/messages.php';
                         <strong><?= e((string) $contract['contract_no']) ?></strong>
                         <span><?= e((string) $contract['customer_name']) ?></span>
                     </div>
-                    <a class="btn btn-sm btn-shell" href="monthly-contract-renew.php?id=<?= e((string) $contract['id']) ?>">
+                    <a class="btn btn-sm btn-shell" href="contract_renew.php?id=<?= e((string) $contract['id']) ?>">
                         Renew
                     </a>
                     <span class="status-pill status-pending">
@@ -119,15 +120,11 @@ require __DIR__ . '/../includes/messages.php';
 
     </div>
 
-    <form method="get" action="monthly-contracts.php#monthlyContractsResultsSection" class="monthly-contract-filter-grid">
+    <form method="get" action="monthly-contracts.php#monthlyContractsResultsSection"
+        class="monthly-contract-filter-grid">
         <div>
             <label for="search" class="form-label">Search</label>
-            <input
-                type="text"
-                class="form-control"
-                id="search"
-                name="search"
-                value="<?= e($filters['search']) ?>"
+            <input type="text" class="form-control" id="search" name="search" value="<?= e($filters['search']) ?>"
                 placeholder="Contract, customer, vehicle, driver">
         </div>
 
@@ -136,7 +133,8 @@ require __DIR__ . '/../includes/messages.php';
             <select class="form-select" id="status" name="status">
                 <option value="">All Statuses</option>
                 <?php foreach (monthly_contract_statuses() as $status): ?>
-                    <option value="<?= e($status) ?>" <?= selected($filters['status'], $status) ?>><?= e($status) ?></option>
+                    <option value="<?= e($status) ?>" <?= selected($filters['status'], $status) ?>><?= e($status) ?>
+                    </option>
                 <?php endforeach; ?>
             </select>
         </div>
@@ -154,12 +152,12 @@ require __DIR__ . '/../includes/messages.php';
         </div>
 
         <div>
-            <label for="payment_status" class="form-label">Payment</label>
-            <select class="form-select" id="payment_status" name="payment_status">
-                <option value="">All Payments</option>
-                <?php foreach (monthly_contract_payment_statuses() as $paymentStatus): ?>
-                    <option value="<?= e($paymentStatus) ?>" <?= selected($filters['payment_status'], $paymentStatus) ?>>
-                        <?= e($paymentStatus) ?>
+            <label for="rental_status" class="form-label">Rental</label>
+            <select class="form-select" id="rental_status" name="rental_status">
+                <option value="">Rental Status</option>
+                <?php foreach (monthly_contract_rental_statuses() as $rentalStatus): ?>
+                    <option value="<?= e($rentalStatus) ?>" <?= selected($filters['rental_status'], $rentalStatus) ?>>
+                        <?= e($rentalStatus) ?>
                     </option>
                 <?php endforeach; ?>
             </select>
@@ -174,18 +172,14 @@ require __DIR__ . '/../includes/messages.php';
             </select>
         </div>
 
-        <div>
-            <label for="date_from" class="form-label">Start From</label>
-            <input type="date" class="form-control" id="date_from" name="date_from" value="<?= e($filters['date_from']) ?>">
-        </div>
+        <div class="d-flex gap-2 align-self-end">
+            <button type="submit" class="btn btn-shell">
+                Filter
+            </button>
 
-        <div>
-            <label for="date_to" class="form-label">End To</label>
-            <input type="date" class="form-control" id="date_to" name="date_to" value="<?= e($filters['date_to']) ?>">
-        </div>
-
-        <div class="d-grid align-self-end">
-            <button type="submit" class="btn btn-shell">Filter</button>
+            <button type="button" class="btn btn-outline-dark" id="resetFilters">
+                Reset
+            </button>
         </div>
     </form>
 </section>
@@ -196,7 +190,8 @@ require __DIR__ . '/../includes/messages.php';
             <h2>Contract List</h2>
             <p><?= e((string) $totalRecords) ?> contract records found.</p>
         </div>
-        <button type="button" class="btn btn-shell btn-sm" data-fullscreen-target="monthlyTable">Fullscreen Table</button>
+        <button type="button" class="btn btn-shell btn-sm" data-fullscreen-target="monthlyTable">Fullscreen
+            Table</button>
 
         <div class="report-actions">
             <a href="monthly_contracts_export_excel.php<?= $exportQuery !== '' ? '?' . e($exportQuery) : '' ?>"
@@ -216,102 +211,121 @@ require __DIR__ . '/../includes/messages.php';
         <table class="table data-table monthly-contract-table align-middle">
             <thead>
                 <tr>
-                    <th>Contract</th>
-                    <th>Customer</th>
-                    <th>Assignment</th>
-                    <th>Dates</th>
-                    <th>Rate</th>
-                    <th>Payment</th>
+                    <th class="text-center">No.</th>
+                    <th>Company / Contract</th>
+                    <th>Car Type</th>
+                    <th>Car No</th>
+                    <th>Driver</th>
+                    <th>Driver Phone</th>
+                    <th>Operation Sheet</th>
+                    <th>Contract Date</th>
+                    <th>Off Day</th>
+                    <th>Service Hour</th>
+                    <th>Rental Price</th>
                     <th>Status</th>
-                    <th>Expiry</th>
                     <th class="text-center">Action</th>
                 </tr>
             </thead>
             <tbody>
                 <?php if ($contracts === []): ?>
                     <tr>
-                        <td colspan="9" class="text-center py-5 text-muted-soft">No monthly contracts found.</td>
+                        <td colspan="13" class="text-center py-5 text-muted-soft">No monthly contracts found.</td>
                     </tr>
                 <?php else: ?>
-                    <?php foreach ($contracts as $contract): ?>
-                        <?php
-                        $expiryState = monthly_contract_expiry_state($contract);
-                        $expiryClass = $expiryState === 'expired'
-                            ? 'status-pending'
-                            : ($expiryState === 'expiring' ? 'resource-assigned' : 'resource-available');
-                        $expiryLabel = match ($expiryState) {
-                            'expired' => 'Expired',
-                            'expiring' => 'Ending Soon',
-                            default => 'On Track',
-                        };
-                        ?>
+
+                    <?php $rowNo = $offset + 1;
+                    foreach ($contracts as $contract): ?>
                         <tr>
-                            <td>
-                                <div class="monthly-contract-no"><?= e((string) $contract['contract_no']) ?></div>
-                                <?php if (!empty($contract['renewal_parent_no'])): ?>
-                                    <div class="soft-note">Renewed from <?= e((string) $contract['renewal_parent_no']) ?></div>
-                                <?php endif; ?>
+                            <td class="text-center fw-bold">
+                                <?= $rowNo++ ?>
                             </td>
-
                             <td>
-                                <div class="monthly-customer"><?= e((string) $contract['customer_name']) ?></div>
-                                <div class="soft-note"><?= e((string) ($contract['customer_phone'] ?: $contract['customer_email'] ?: '-')) ?></div>
-                                <div class="soft-note">Operator: <?= e(monthly_contract_operator_display($contract)) ?></div>
-                            </td>
+                                <div class="monthly-customer"><?= e($contract['customer_name']) ?></div>
+                                <div class="soft-note">
+                                    <?= e(trim((string)($contract['contact_person'] ?? '')) !== '' ? $contract['contact_person'] : '') ?>
 
-                            <td>
-                                <div class="monthly-assignment-stack">
-                                    <span class="resource-pill <?= e(monthly_contract_assignment_badge_class((string) $contract['assignment_type'])) ?>">
-                                        <?= e((string) $contract['assignment_type']) ?>
-                                    </span>
-                                    <span class="table-pill car-pill monthly-resource-pill">
-                                        <?= e(monthly_contract_vehicle_display($contract)) ?>
-                                    </span>
-                                    <span class="table-pill driver-pill monthly-resource-pill">
-                                        <?= e(monthly_contract_driver_display($contract)) ?>
-                                    </span>
+                                    <!-- <?= e(trim((string)($contract['guest_name'] ?? '')) !== '' ? $contract['guest_name'] : '') ?> -->
                                 </div>
                             </td>
 
                             <td>
-                                <div class="monthly-date-primary"><?= e(format_display_date($contract['start_date'])) ?></div>
-                                <div class="soft-note"><?= e(format_display_date($contract['end_date'])) ?></div>
+                                <?= e($contract['car_type']) ?>
                             </td>
 
                             <td>
-                                <div class="monthly-money"><?= e(monthly_contract_money($contract['monthly_rate'])) ?></div>
-                                <div class="soft-note">Deposit <?= e(monthly_contract_money($contract['security_deposit'])) ?></div>
+                                <?= e($contract['plate_no']) ?>
                             </td>
 
                             <td>
-                                <span class="resource-pill <?= e(monthly_contract_payment_badge_class((string) $contract['payment_status'])) ?>">
-                                    <?= e((string) $contract['payment_status']) ?>
+                                <?= e($contract['driver_name']) ?>
+                            </td>
+
+                            <td>
+                                <?= e($contract['driver_phone']) ?>
+                            </td>
+
+                            <td>
+                                <?= e($contract['operation_sheet']) ?>
+                            </td>
+
+                            <td>
+                                <?= e(date('d-M-Y', strtotime($contract['start_date']))) ?>
+                                <div class="soft-note">
+                                    <?= e(date('d-M-Y', strtotime($contract['end_date']))) ?>
+                                </div>
+                            </td>
+
+                            <td>
+                                <?= e($contract['off_day']) ?>
+                            </td>
+
+                            <td>
+                                <?= e($contract['service_hour']) ?>
+                            </td>
+
+                            <td>
+                                <?= e(monthly_contract_money($contract['monthly_rate'])) ?>
+                                <?= e($contract['rental_currency']) ?>
+                            </td>
+
+                            <td>
+
+                                <span class="status-pill <?= e(monthly_contract_status_badge_class($contract['status'])) ?>">
+                                    <?= e($contract['status']) ?>
                                 </span>
-                            </td>
 
-                            <td>
-                                <span class="status-pill <?= e(monthly_contract_status_badge_class((string) $contract['status'])) ?>">
-                                    <?= e((string) $contract['status']) ?>
-                                </span>
-                            </td>
-
-                            <td>
-                                <span class="resource-pill <?= e($expiryClass) ?>"><?= e($expiryLabel) ?></span>
-                                <div class="soft-note"><?= e(format_display_date($contract['end_date'])) ?></div>
                             </td>
 
                             <td class="text-center">
+
                                 <div class="table-actions monthly-actions">
-                                    <a class="btn btn-sm btn-shell" href="contract_edit.php?id=<?= e((string) $contract['id']) ?>">Edit</a>
-                                    <a class="btn btn-sm btn-shell" href="contract_renew.php?id=<?= e((string) $contract['id']) ?>">Renew</a>
-                                    <form
-                                        method="post"
-                                        action="monthly-contract-delete.php?id=<?= e((string) $contract['id']) ?>"
+
+                                    <a href="monthly-contract-view.php?id=<?= (int)$contract['id'] ?>"
+                                        class="btn btn-sm btn-shell">
+                                        View
+                                    </a>
+
+                                    <a href="contract_edit.php?id=<?= (int)$contract['id'] ?>" class="btn btn-sm btn-shell">
+                                        Edit
+                                    </a>
+
+                                    <a href="contract_renew.php?id=<?= (int)$contract['id'] ?>" class="btn btn-sm btn-shell">
+                                        Renew
+                                    </a>
+
+                                    <form method="post" action="contract_delete.php?id=<?= (int)$contract['id'] ?>"
                                         onsubmit="return confirm('Delete this monthly contract?');">
+
                                         <?= csrf_field() ?>
-                                        <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+
+                                        <button type="submit" class="btn btn-sm btn-delete">
+                                            Delete
+                                        </button>
+
                                     </form>
+
                                 </div>
+
                             </td>
                         </tr>
                     <?php endforeach; ?>
@@ -329,7 +343,8 @@ require __DIR__ . '/../includes/messages.php';
                     $pageQuery['page'] = (string) $i;
                     ?>
                     <li class="page-item <?= $i === $page ? 'active' : '' ?>">
-                        <a class="page-link" href="monthly-contracts.php?<?= e(http_build_query($pageQuery)) ?>#monthlyContractsResultsSection">
+                        <a class="page-link"
+                            href="monthly-contracts.php?<?= e(http_build_query($pageQuery)) ?>#monthlyContractsResultsSection">
                             <?= e((string) $i) ?>
                         </a>
                     </li>
