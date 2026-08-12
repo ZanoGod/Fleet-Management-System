@@ -1,46 +1,3 @@
-Need to fix the Dashboard-> table and data. entities .. and add view button.. 
-add customers to fix and to select.. 
-and need to fix the reports.. data entites..
-        modified:   .hintrc
-        modified:   README.md
-        new file:   assets/css/customers.css
-        modified:   assets/css/monthly-contracts.css
-        modified:   assets/css/reports.css
-        modified:   assets/css/sidebar.css
-        modified:   assets/css/style.css
-        modified:   includes/bootstrap.php
-        new file:   includes/customer-form.php
-        modified:   includes/dashboard/summary-grid.php
-        modified:   includes/header.php
-        modified:   includes/helpers.php
-        modified:   includes/operator-form.php
-        modified:   index.php
-        modified:   monthly_contract/car-create.php
-        renamed:    monthly_contract/car-delete.php -> monthly_contract/car_delete.php
-        renamed:    monthly_contract/car-edit.php -> monthly_contract/car_edit.php
-        modified:   monthly_contract/contract-reports.php
-        renamed:    monthly_contract/contract-cars.php -> monthly_contract/contract_cars.php
-        modified:   monthly_contract/contract_create.php
-        modified:   monthly_contract/contract_edit.php
-        new file:   monthly_contract/contract_op_create.php
-        modified:   monthly_contract/contract_operators.php
-        modified:   monthly_contract/contract_renew.php
-        modified:   monthly_contract/customers.php
-        new file:   monthly_contract/customers_add.php
-        new file:   monthly_contract/customers_delete.php
-        new file:   monthly_contract/customers_edit.php
-        modified:   monthly_contract/delete.php
-        renamed:    monthly_contract/driver-create.php -> monthly_contract/driver_create.php
-        renamed:    monthly_contract/driver-delete.php -> monthly_contract/driver_delete.php
-        renamed:    monthly_contract/driver-edit.php -> monthly_contract/driver_edit.php
-        modified:   monthly_contract/drivers.php
-        renamed:    includes/monthly-contract-form.php -> monthly_contract/monthly-contract-form.php
-        renamed:    includes/monthly-contracts-data.php -> monthly_contract/monthly-contracts-data.php
-        modified:   monthly_contract/monthly-contracts.php
-        renamed:    includes/monthly_contracts_export_excel.php -> monthly_contract/monthly_contracts_export_excel.php
-        renamed:    includes/monthly_contracts_export_pdf.php -> monthly_contract/monthly_contracts_export_pdf.php
-        modified:   operator-create.php
-        
 # Fleet Management System
 
 A web-based Fleet Management System developed using PHP, MySQL, Bootstrap 5, HTML, CSS, and JavaScript.
@@ -51,6 +8,7 @@ The system is designed to manage company vehicle bookings, vehicle information, 
 
 ## Features
 
+#### Daily Booking  & Monthly Booking
 ### Dashboard
 - Summary statistics
 - Active bookings
