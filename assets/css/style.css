@@ -391,6 +391,57 @@ a {
   font-size: 0.82rem;
 }
 
+/* ==========================================
+   Monthly Contracts - Subtle Highlight
+   ========================================== */
+
+.overview-card-monthly {
+  background: rgba(255, 253, 249, 0.97);
+  border: 1px solid rgba(79, 32, 13, 0.12);
+  box-shadow:
+    0 1px 2px rgba(79, 32, 13, 0.04),
+    0 8px 24px rgba(79, 32, 13, 0.07),
+    0 24px 48px -12px rgba(79, 32, 13, 0.08);
+}
+
+/* Subtle permanent accent */
+.overview-card-monthly::before {
+  opacity: 1;
+  width: 3px;
+  background: var(--amber);
+}
+
+.overview-card-monthly span {
+  color: var(--cocoa-soft);
+  font-weight: 700;
+}
+
+.overview-card-monthly strong {
+  color: var(--cocoa);
+  font-size: 2.15rem;
+  font-weight: 850;
+}
+
+.overview-card-monthly small {
+  color: var(--cocoa-soft);
+  font-weight: 650;
+}
+
+/* Keep the interaction subtle */
+.overview-card-monthly:hover {
+  transform: translateY(-2px);
+  border-color: rgba(255, 154, 0, 0.28);
+  background: linear-gradient(
+    135deg,
+    rgba(255, 250, 243, 0.98) 0%,
+    rgba(255, 239, 204, 0.98) 100%
+  );
+  border: 1px solid rgba(255, 154, 0, 0.3);
+  box-shadow:
+    0 2px 4px rgba(79, 32, 13, 0.05),
+    0 10px 28px rgba(255, 154, 0, 0.13);
+}
+
 .section-card {
   padding: 1.5rem;
 }
@@ -592,87 +643,76 @@ a {
   color: var(--cocoa);
 } */
 
-
 /*---------------------------------------
     Dashboard Button
 ---------------------------------------*/
 
-.btn-dashboard{
-    position: relative;
-    display: inline-flex;
-    justify-content: center;
-    align-items: center;
-    overflow: hidden;
-    min-width: 145px;
-    height: 48px;
-    padding: 0 22px;
-    border: 1px solid #e7c56b;
-    border-radius: 16px;
-    /* Darker premium cream */
-    background: linear-gradient(
-        135deg,
-        #fff6e6 0%,
-        #ffe9bf 55%,
-        #ffd98c 100%
-    );
-    color: var(--cocoa);
-    font-size: .95rem;
-    font-weight: 700;
-    text-decoration: none;
-    box-shadow:
-        0 8px 20px rgba(79,32,13,.12),
-        0 2px 6px rgba(255,181,40,.12),
-        inset 0 1px 0 rgba(255,255,255,.65);
-    transition: .35s ease;
+.btn-dashboard {
+  position: relative;
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+  min-width: 145px;
+  height: 48px;
+  padding: 0 22px;
+  border: 1px solid #e7c56b;
+  border-radius: 16px;
+  /* Darker premium cream */
+  background: linear-gradient(135deg, #fff6e6 0%, #ffe9bf 55%, #ffd98c 100%);
+  color: var(--cocoa);
+  font-size: 0.95rem;
+  font-weight: 700;
+  text-decoration: none;
+  box-shadow:
+    0 8px 20px rgba(79, 32, 13, 0.12),
+    0 2px 6px rgba(255, 181, 40, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.65);
+  transition: 0.35s ease;
 }
 
 /* Shine Effect */
-.btn-dashboard::before{
-    content:"";
-    position:absolute;
-    top:0;
-    left:-120%;
-    width:50%;
-    height:100%;
+.btn-dashboard::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -120%;
+  width: 50%;
+  height: 100%;
 
-    background:linear-gradient(
-        90deg,
-        transparent,
-        rgba(255,255,255,.55),
-        transparent
-    );
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.55),
+    transparent
+  );
 
-    transform:skewX(-25deg);
-    transition:left .7s ease;
+  transform: skewX(-25deg);
+  transition: left 0.7s ease;
 }
 
 /* Hover */
-.btn-dashboard:hover{
-    color:#fff;
-    background:linear-gradient(
-        135deg,
-        #7a4729,
-        #9d6035 50%,
-        #d58b21
-    );
+.btn-dashboard:hover {
+  color: #fff;
+  background: linear-gradient(135deg, #7a4729, #9d6035 50%, #d58b21);
 
-    border-color:rgba(255,220,110,.75);
+  border-color: rgba(255, 220, 110, 0.75);
 
-    transform:translateY(-3px);
+  transform: translateY(-3px);
 
-    box-shadow:
-        0 16px 35px rgba(79,32,13,.22),
-        0 6px 18px rgba(255,176,55,.30);
+  box-shadow:
+    0 16px 35px rgba(79, 32, 13, 0.22),
+    0 6px 18px rgba(255, 176, 55, 0.3);
 }
 
-.btn-dashboard:hover::before{
-    left:150%;
+.btn-dashboard:hover::before {
+  left: 150%;
 }
 
 /* Click */
-.btn-dashboard:active{
-    transform:translateY(0);
-    box-shadow:0 6px 15px rgba(79,32,13,.18);
+.btn-dashboard:active {
+  transform: translateY(0);
+  box-shadow: 0 6px 15px rgba(79, 32, 13, 0.18);
 }
 
 .btn-accent {
@@ -704,9 +744,6 @@ a {
     background 0.25s ease,
     color 0.25s ease;
 }
-
-
-
 
 /* Premium Glass Shine */
 .btn-accent::before {

@@ -3,17 +3,6 @@
     "development"
   ],
   "hints": {
-    "compat-api/css": [
-      "default",
-      {
-        "ignore": [
-          "-webkit-text-size-adjust",
-          "text-align: -webkit-match-parent",
-          "scrollbar-gutter",
-          "scrollbar-gutter: stable",
-          "backdrop-filter"
-        ]
-      }
-    ]
+    "compat-api/css": "off"
   }
 }

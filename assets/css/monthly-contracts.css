@@ -364,3 +364,108 @@
     min-height: 100%;
   }
 }
+
+/* =========================================================
+   TABLE FULLSCREEN — MATCH THE CUSTOMER DIRECTORY
+   Keep the fullscreen canvas light, contained and usable.
+   ========================================================= */
+#monthlyTable:fullscreen {
+  width: 100vw;
+  height: 100vh;
+  min-width: 0;
+  max-width: none;
+  margin: 0;
+  padding: 24px 28px 28px;
+  box-sizing: border-box;
+  overflow: auto;
+  background: #fffdf9;
+  color: #5d4b3f;
+}
+
+#monthlyTable:fullscreen .monthly-contract-table {
+  width: 100%;
+  min-width: 1720px;
+  margin: 0;
+  background: #fffdf9;
+}
+
+#monthlyTable:fullscreen .monthly-contract-table thead th {
+  background: #5b2a14;
+  color: #fff8ee;
+  border-color: #5b2a14;
+}
+
+#monthlyTable:fullscreen .monthly-contract-table tbody td {
+  background: #fffdf9;
+  color: #5d4b3f;
+  border-bottom-color: #eee6de;
+}
+
+#monthlyTable:fullscreen .monthly-contract-table tbody tr:hover td {
+  background: #fffaf3;
+}
+
+#monthlyTable:fullscreen .monthly-fullscreen-exit {
+  display: inline-flex;
+}
+
+.monthly-fullscreen-exit {
+  display: none;
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  float: right;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin: 0 0 12px auto;
+  padding: 8px 13px;
+  border: 1px solid #d8b17f;
+  border-radius: 9px;
+  background: #fffaf2;
+  color: #744421;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(79, 32, 13, 0.08);
+}
+
+.monthly-fullscreen-exit:hover {
+  background: #f7ecdc;
+  border-color: #9a5b34;
+  color: #572b16;
+}
+
+.monthly-fullscreen-exit span {
+  font-size: 18px;
+  line-height: 0.8;
+}
+
+#monthlyTable:fullscreen .monthly-contract-table tbody td[colspan] {
+  height: 100px;
+  background: #fffdf9;
+  color: #8e7868;
+}
+
+/* Prevent the browser's default black fullscreen canvas from appearing. */
+#monthlyTable:-webkit-full-screen {
+  width: 100vw;
+  height: 100vh;
+  min-width: 0;
+  margin: 0;
+  padding: 24px 28px 28px;
+  box-sizing: border-box;
+  overflow: auto;
+  background: #fffdf9;
+}
+
+#monthlyTable:-webkit-full-screen .monthly-contract-table {
+  width: 100%;
+  min-width: 1720px;
+  background: #fffdf9;
+}
+
+#monthlyTable:-webkit-full-screen .monthly-fullscreen-exit {
+  display: inline-flex;
+}

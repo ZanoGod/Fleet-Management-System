@@ -19,14 +19,14 @@ $summary = ($summary ?? []) + [
         <span>Total Bookings</span>
         <strong><?= e((string) $summary['total_bookings']) ?></strong>
         <small>All trip records in the system</small>
-    </div>   
-    
+    </div>
+
     <div class="card-shell overview-card">
         <span>Available Cars</span>
         <strong><?= e((string) $summary['available_cars']) ?></strong>
         <small><?= e((string) $summary['total_cars']) ?> Total Cars</small>
     </div>
-    
+
     <div class="card-shell overview-card">
         <span>Available Drivers</span>
         <strong><?= e((string) $summary['available_drivers']) ?></strong>
@@ -39,9 +39,10 @@ $summary = ($summary ?? []) + [
         <small>Confirmed bookings not yet ended</small>
     </div>
 
-    <a class="card-shell overview-card overview-card-link" href="monthly_contract/monthly-contracts.php">
+    <a class="card-shell overview-card overview-card-link overview-card-monthly"
+        href="monthly_contract/monthly-contracts.php">
         <span>Monthly Contracts</span>
-        <strong><?= e((string) $summary['total_contracts']) ?></strong>
-        <small><?= e((string) $summary['expiring_contracts']) ?> expiring soon</small>
+        <strong><?= e((string) $summary['expiring_contracts']) ?></strong>
+        <small>Expiring soon</small>
     </a>
 </section>

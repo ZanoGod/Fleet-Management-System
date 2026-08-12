@@ -88,7 +88,7 @@ require __DIR__ . '/../includes/messages.php';
         <div class="section-title">
             <div>
                 <h2>Expiry Notifications</h2>
-                <p>Contracts ending within the next 30 days.</p>
+                <p>Contracts ending within the next 60 days.</p>
             </div>
         </div>
 
@@ -96,8 +96,21 @@ require __DIR__ . '/../includes/messages.php';
             <?php foreach ($expiringContracts as $contract): ?>
                 <div class="monthly-expiry-item">
                     <div>
-                        <strong><?= e((string) $contract['contract_no']) ?></strong>
-                        <span><?= e((string) $contract['customer_name']) ?></span>
+                        <?php
+                        $contactPerson = trim((string) ($contract['contact_person'] ?? ''));
+                        $guestName = trim((string) ($contract['guest_name'] ?? ''));
+                        $customerName = trim((string) ($contract['customer_name'] ?? ''));
+
+                        $displayName = $contactPerson !== ''
+                            ? $contactPerson
+                            : ($guestName !== '' ? $guestName : $customerName);
+                        ?>
+
+                        <strong><?= e($displayName) ?></strong>
+
+                        <?php if ($customerName !== '' && $displayName !== $customerName): ?>
+                            <span><?= e($customerName) ?></span>
+                        <?php endif; ?>
                     </div>
                     <a class="btn btn-sm btn-shell" href="contract_renew.php?id=<?= e((string) $contract['id']) ?>">
                         Renew
@@ -190,8 +203,11 @@ require __DIR__ . '/../includes/messages.php';
             <h2>Contract List</h2>
             <p><?= e((string) $totalRecords) ?> contract records found.</p>
         </div>
-        <button type="button" class="btn btn-shell btn-sm" data-fullscreen-target="monthlyTable">Fullscreen
-            Table</button>
+        <button type="button" class="btn btn-shell btn-sm" id="monthlyTableFullscreenBtn"
+            data-fullscreen-target="monthlyTable" aria-label="Open contract table in fullscreen">
+            <span class="fullscreen-label">Fullscreen Table</span>
+            <span class="fullscreen-exit-label" hidden>Exit Fullscreen</span>
+        </button>
 
         <div class="report-actions">
             <a href="monthly_contracts_export_excel.php<?= $exportQuery !== '' ? '?' . e($exportQuery) : '' ?>"
@@ -208,6 +224,10 @@ require __DIR__ . '/../includes/messages.php';
     </div>
 
     <div class="table-responsive" id="monthlyTable">
+        <button type="button" class="monthly-fullscreen-exit" id="monthlyTableInlineExit" hidden
+            aria-label="Exit fullscreen table">
+            <span aria-hidden="true">×</span> Exit Fullscreen
+        </button>
         <table class="table data-table monthly-contract-table align-middle">
             <thead>
                 <tr>
@@ -353,5 +373,55 @@ require __DIR__ . '/../includes/messages.php';
         </nav>
     <?php endif; ?>
 </section>
+
+<script>
+(() => {
+    const table = document.getElementById('monthlyTable');
+    const toggle = document.getElementById('monthlyTableFullscreenBtn');
+    const inlineExit = document.getElementById('monthlyTableInlineExit');
+
+    if (!table || !toggle) return;
+
+    const label = toggle.querySelector('.fullscreen-label');
+    const exitLabel = toggle.querySelector('.fullscreen-exit-label');
+
+    const isFullscreen = () => document.fullscreenElement === table;
+
+    const syncFullscreenUI = () => {
+        const active = isFullscreen();
+        if (label) label.hidden = active;
+        if (exitLabel) exitLabel.hidden = !active;
+        toggle.setAttribute('aria-label', active ? 'Exit fullscreen table' : 'Open contract table in fullscreen');
+        if (inlineExit) inlineExit.hidden = !active;
+    };
+
+    toggle.addEventListener('click', async () => {
+        try {
+            if (isFullscreen()) {
+                await document.exitFullscreen();
+            } else {
+                await table.requestFullscreen();
+            }
+        } catch (error) {
+            console.error('Unable to change fullscreen state:', error);
+        }
+    });
+
+    if (inlineExit) {
+        inlineExit.addEventListener('click', async () => {
+            if (isFullscreen()) {
+                try {
+                    await document.exitFullscreen();
+                } catch (error) {
+                    console.error('Unable to exit fullscreen:', error);
+                }
+            }
+        });
+    }
+
+    document.addEventListener('fullscreenchange', syncFullscreenUI);
+    syncFullscreenUI();
+})();
+</script>
 
 <?php require __DIR__ . '/../includes/footer.php'; ?>

@@ -184,7 +184,8 @@ function monthly_contract_where(array $filters): array
 
     if ($filters['expiry'] === 'expiring') {
         $where[] = "mc.status NOT IN ('Renewed', 'Cancelled')
-            AND mc.end_date BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 30 DAY)";
+        AND mc.end_date >= CURDATE()
+        AND mc.end_date < DATE_ADD(CURDATE(), INTERVAL 60 DAY)";
     }
 
     if ($filters['expiry'] === 'expired') {
@@ -290,10 +291,11 @@ function monthly_contract_stats(mysqli $db): array
         "SELECT
             COUNT(*) AS total,
             SUM(CASE WHEN status = 'Active' THEN 1 ELSE 0 END) AS active,
-            SUM(CASE
-                WHEN status NOT IN ('Renewed', 'Cancelled')
-                 AND end_date BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 30 DAY)
-                THEN 1 ELSE 0 END
+           SUM(CASE
+             WHEN status NOT IN ('Renewed', 'Cancelled')
+              AND end_date >= CURDATE()
+            AND end_date < DATE_ADD(CURDATE(), INTERVAL 60 DAY)
+            THEN 1 ELSE 0 END
             ) AS expiring,
             SUM(CASE
                 WHEN status NOT IN ('Renewed', 'Cancelled')
@@ -311,7 +313,7 @@ function monthly_contract_stats(mysqli $db): array
     return $stats;
 }
 
-function monthly_contract_expiry_notifications(mysqli $db, int $limit = 6): array
+function monthly_contract_expiry_notifications(mysqli $db, int $limit = 10): array
 {
     $filters = monthly_contract_default_filters();
     $filters['expiry'] = 'expiring';
