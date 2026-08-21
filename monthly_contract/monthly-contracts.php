@@ -355,7 +355,7 @@ require __DIR__ . '/../includes/messages.php';
     </div>
 
     <?php if ($totalPages > 1): ?>
-        <nav class="monthly-pagination" aria-label="Monthly contract pagination">
+        <nav class="monthly-pagination fleet-pagination" aria-label="Monthly contract pagination">
             <ul class="pagination justify-content-end mb-0">
                 <?php for ($i = 1; $i <= $totalPages; $i++): ?>
                     <?php
@@ -372,6 +372,8 @@ require __DIR__ . '/../includes/messages.php';
             </ul>
         </nav>
     <?php endif; ?>
+
+    
 </section>
 
 <script>

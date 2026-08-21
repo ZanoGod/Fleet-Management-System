@@ -469,3 +469,36 @@
 #monthlyTable:-webkit-full-screen .monthly-fullscreen-exit {
   display: inline-flex;
 }
+
+/* Pagination color consistency: GSS monthly fleet */
+.fleet-pagination .page-link,
+.monthly-pagination.fleet-pagination .page-link {
+  color: #4f200d !important;
+  background-color: #fffdf9 !important;
+  border-color: rgba(79, 32, 13, 0.16) !important;
+  font-weight: 700;
+}
+
+.fleet-pagination .page-item.active .page-link,
+.monthly-pagination.fleet-pagination .page-item.active .page-link {
+  color: #f6f1e9 !important;
+  background-color: #4f200d !important;
+  border-color: #4f200d !important;
+}
+
+.fleet-pagination .page-link:hover,
+.fleet-pagination .page-link:focus,
+.monthly-pagination.fleet-pagination .page-link:hover,
+.monthly-pagination.fleet-pagination .page-link:focus {
+  color: #f6f1e9 !important;
+  background-color: #4f200d !important;
+  border-color: #4f200d !important;
+  box-shadow: none;
+}
+
+.fleet-pagination .page-item.disabled .page-link,
+.monthly-pagination.fleet-pagination .page-item.disabled .page-link {
+  color: #8f735f !important;
+  background-color: #fffdf9 !important;
+  border-color: rgba(79, 32, 13, 0.12) !important;
+}

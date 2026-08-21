@@ -1116,3 +1116,140 @@ a {
     width: 100%;
   }
 }
+
+/* ==========================================================
+   FLEET MONTH FILTER
+   Shared month navigation used by vehicle/driver fleet pages.
+========================================================== */
+.fleet-month-filter {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-left: 4px;
+  white-space: nowrap;
+}
+
+.fleet-month-label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--muted, #8f7a6d);
+}
+
+.fleet-month-nav {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.fleet-month-arrow,
+.fleet-month-today {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 36px;
+  border: 1px solid rgba(92, 48, 27, 0.18);
+  border-radius: 10px;
+  background: #fff;
+  color: #5c301b;
+  text-decoration: none;
+  transition: 0.15s ease;
+}
+
+.fleet-month-arrow {
+  width: 36px;
+  font-size: 1.35rem;
+  line-height: 1;
+}
+
+.fleet-month-arrow:hover,
+.fleet-month-today:hover {
+  border-color: #5c301b;
+  background: #faf5f0;
+  color: #5c301b;
+}
+
+.fleet-month-value {
+  min-width: 118px;
+  text-align: center;
+  font-weight: 700;
+  color: #5c301b;
+}
+
+.fleet-month-today {
+  padding: 0 12px;
+  font-size: 0.84rem;
+  font-weight: 600;
+}
+
+.fleet-month-today.is-current {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+/* ==========================================================
+   FLEET PAGINATION
+   Keep pagination inside the results card and match the
+   Monthly Contracts visual treatment.
+========================================================== */
+.fleet-pagination {
+  display: flex;
+  justify-content: flex-end;
+  margin: 1rem 0 0;
+  padding-top: 0.25rem;
+}
+
+.fleet-pagination .pagination {
+  margin-bottom: 0;
+  gap: 0;
+}
+
+.fleet-pagination .page-link {
+  min-width: 38px;
+  min-height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.45rem 0.7rem;
+  border: 1px solid rgba(79, 32, 13, 0.12);
+  color: var(--cocoa);
+  background: #fff;
+  font-weight: 700;
+  line-height: 1;
+  box-shadow: none;
+}
+
+.fleet-pagination .page-item:first-child .page-link {
+  border-radius: 8px 0 0 8px;
+}
+
+.fleet-pagination .page-item:last-child .page-link {
+  border-radius: 0 8px 8px 0;
+}
+
+.fleet-pagination .page-item + .page-item .page-link {
+  border-left-width: 0;
+}
+
+.fleet-pagination .page-item.active .page-link {
+  background: var(--cocoa);
+  border-color: var(--cocoa);
+  color: var(--cream);
+}
+
+.fleet-pagination .page-item:not(.active):not(.disabled) .page-link:hover {
+  background: #faf5f0;
+  color: var(--cocoa);
+}
+
+.fleet-pagination .page-item.disabled .page-link {
+  color: var(--muted);
+  background: #fff;
+}
+
+@media (max-width: 1100px) {
+  .fleet-month-filter {
+    grid-column: 1 / -1;
+    justify-content: flex-start;
+    margin-top: 4px;
+  }
+}

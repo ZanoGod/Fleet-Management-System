@@ -116,25 +116,7 @@ fleet-management/
 ### Dashboard
 Displays operational summaries including:
 
-- Total Vehicles
-- Total Drivers
-- Total Operators
-- Total Bookings
-- Recent Bookings
-- Business Insights
----
 
-
-### Booking Module
-
-The booking module allows users to:
-
-- Register new bookings
-- Update booking information
-- Delete bookings
-- View booking history
-
----
 
 
 ### Fleet Module

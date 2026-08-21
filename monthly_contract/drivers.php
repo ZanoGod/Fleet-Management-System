@@ -22,6 +22,34 @@ $filters = [
     'status' => trim((string) ($_GET['status'] ?? '')),
 ];
 
+/*
+|--------------------------------------------------------------------------
+| SELECTED MONTH
+|--------------------------------------------------------------------------
+*/
+$selectedMonthValue = trim((string) ($_GET['month'] ?? ''));
+$selectedMonth = DateTimeImmutable::createFromFormat('!Y-m', $selectedMonthValue);
+if (!$selectedMonth || $selectedMonth->format('Y-m') !== $selectedMonthValue) {
+    $selectedMonth = new DateTimeImmutable('first day of this month');
+}
+$selectedMonthValue = $selectedMonth->format('Y-m');
+$selectedMonthStart = $selectedMonth->modify('first day of this month')->setTime(0, 0, 0);
+$selectedMonthEnd = $selectedMonth->modify('last day of this month')->setTime(23, 59, 59);
+$previousMonth = $selectedMonth->modify('-1 month');
+$nextMonth = $selectedMonth->modify('+1 month');
+$currentMonthValue = (new DateTimeImmutable('first day of this month'))->format('Y-m');
+$buildMonthUrl = static function (string $month) use ($filters): string {
+    $query = array_filter([
+        'search' => $filters['search'],
+        'status' => $filters['status'],
+        'month' => $month,
+        'page' => '1',
+    ], static fn(string $value): bool => $value !== '');
+    return 'drivers.php?' . http_build_query($query) . '#monthlyDriversResultsSection';
+};
+
+$page = max(1, (int) ($_GET['page'] ?? 1));
+$perPage = 10;
 $drivers = [];
 $driverAssignments = [];
 $stats = [
@@ -32,7 +60,18 @@ $stats = [
     'inactive' => 0,
 ];
 
+
+$filterQuery = array_filter(
+    array_merge($filters, ['month' => $selectedMonthValue]),
+    static fn(string $value): bool => $value !== ''
+);
+
+$totalRecords = 0;
+$totalPages = 1;
+$offset = 0;
+
 if ($db instanceof mysqli) {
+
     $where = [];
     $types = '';
     $params = [];
@@ -64,6 +103,30 @@ if ($db instanceof mysqli) {
         $params[] = $filters['status'];
     }
 
+    // Server-side pagination: count matching records and fetch only 10 rows.
+    $countSql = 'SELECT COUNT(*) AS total FROM monthly_drivers';
+
+    if ($where !== []) {
+        $countSql .= ' WHERE ' . implode(' AND ', $where);
+    }
+
+    $countStatement = $db->prepare($countSql);
+
+    if ($countStatement instanceof mysqli_stmt) {
+        if ($params !== []) {
+            bind_statement_params($countStatement, $types, $params);
+        }
+
+        $countStatement->execute();
+        $countRow = $countStatement->get_result()->fetch_assoc() ?: [];
+        $totalRecords = (int) ($countRow['total'] ?? 0);
+        $countStatement->close();
+    }
+
+    $totalPages = max(1, (int) ceil($totalRecords / $perPage));
+    $page = min($page, $totalPages);
+    $offset = ($page - 1) * $perPage;
+
     $sql = 'SELECT
                 monthly_drivers.id,
                 monthly_drivers.full_name,
@@ -75,13 +138,17 @@ if ($db instanceof mysqli) {
         $sql .= ' WHERE ' . implode(' AND ', $where);
     }
 
-    $sql .= ' ORDER BY monthly_drivers.full_name ASC';
+    $sql .= ' ORDER BY monthly_drivers.full_name ASC LIMIT ? OFFSET ?';
+
     $statement = $db->prepare($sql);
 
     if ($statement instanceof mysqli_stmt) {
-        if ($params !== []) {
-            bind_statement_params($statement, $types, $params);
-        }
+        $queryTypes = $types . 'ii';
+        $queryParams = $params;
+        $queryParams[] = $perPage;
+        $queryParams[] = $offset;
+
+        bind_statement_params($statement, $queryTypes, $queryParams);
 
         $statement->execute();
         $result = $statement->get_result();
@@ -93,7 +160,40 @@ if ($db instanceof mysqli) {
         $statement->close();
     }
 
-    $driverAssignments = fetch_monthly_contract_resource_assignments($db, 'driver_id');
+    /* Load monthly contracts that overlap the selected month. */
+    $driverAssignments = [];
+    $assignmentStatement = $db->prepare(
+        "SELECT
+            driver_id,
+            start_date,
+            end_date,
+            contract_no,
+            customer_name,
+            status,
+            id
+         FROM monthly_contracts
+         WHERE driver_id IS NOT NULL
+           AND start_date <= ?
+           AND end_date >= ?
+           AND status NOT IN ('Cancelled', 'Canceled', 'Cancel')
+         ORDER BY start_date ASC, end_date ASC, id ASC"
+    );
+    if ($assignmentStatement instanceof mysqli_stmt) {
+        bind_statement_params(
+            $assignmentStatement,
+            'ss',
+            [$selectedMonthEnd->format('Y-m-d H:i:s'), $selectedMonthStart->format('Y-m-d H:i:s')]
+        );
+        $assignmentStatement->execute();
+        $assignmentResult = $assignmentStatement->get_result();
+        while ($assignment = $assignmentResult->fetch_assoc()) {
+            $driverId = (int) ($assignment['driver_id'] ?? 0);
+            if ($driverId > 0) {
+                $driverAssignments[$driverId][] = $assignment;
+            }
+        }
+        $assignmentStatement->close();
+    }
     $statsResult = $db->query(
         "SELECT
             COUNT(*) AS total,
@@ -112,6 +212,9 @@ if ($db instanceof mysqli) {
 require __DIR__ . '/../includes/header.php';
 require __DIR__ . '/../includes/messages.php';
 ?>
+
+
+
 
 <section class="overview-grid">
     <div class="card-shell overview-card">
@@ -169,6 +272,21 @@ require __DIR__ . '/../includes/messages.php';
         <div class="d-grid align-self-end">
             <button type="submit" class="btn btn-shell">Filter</button>
         </div>
+        <input type="hidden" name="month" value="<?= e($selectedMonthValue) ?>">
+        
+        <div class="fleet-month-filter" aria-label="Booking month selector">
+            <span class="fleet-month-label">Month</span>
+            <div class="fleet-month-nav">
+                <a class="fleet-month-arrow" href="<?= e($buildMonthUrl($previousMonth->format('Y-m'))) ?>" aria-label="Previous month" title="Previous month">‹</a>
+                <span class="fleet-month-value"><?= e($selectedMonth->format('F Y')) ?></span>
+                <a class="fleet-month-arrow" href="<?= e($buildMonthUrl($nextMonth->format('Y-m'))) ?>" aria-label="Next month" title="Next month">›</a>
+                <?php if ($selectedMonthValue !== $currentMonthValue): ?>
+                    <a class="fleet-month-today" href="<?= e($buildMonthUrl($currentMonthValue)) ?>">Today</a>
+                <?php else: ?>
+                    <span class="fleet-month-today is-current">Today</span>
+                <?php endif; ?>
+            </div>
+        </div>
     </form>
 </section>
 
@@ -176,7 +294,7 @@ require __DIR__ . '/../includes/messages.php';
     <div class="section-title">
         <div>
             <h2>Monthly Driver List</h2>
-            <p>Daily booking drivers are managed separately from this list.</p>
+            <p><?= e((string) $totalRecords) ?> driver records found. Showing 10 drivers per page for <?= e($selectedMonth->format('F Y')) ?>.</p>
         </div>
     </div>
 
@@ -196,9 +314,10 @@ require __DIR__ . '/../includes/messages.php';
             <tbody>
                 <?php if ($drivers === []): ?>
                     <tr>
-                        <td colspan="7" class="text-center py-5 text-muted-soft">No monthly drivers found.</td>
+                        <td colspan="8" class="text-center py-5 text-muted-soft">No monthly drivers found.</td>
                     </tr>
                 <?php else: ?>
+                    <?php $rowNo = $offset + 1; ?>
                     <?php foreach ($drivers as $driver): ?>
                         <?php
                         $assignments = $driverAssignments[(int) $driver['id']] ?? [];
@@ -265,7 +384,7 @@ require __DIR__ . '/../includes/messages.php';
                                     <a class="btn btn-sm btn-shell" href="driver_edit.php?id=<?= e((string) $driver['id']) ?>">Edit</a>
                                     <form
                                         method="post"
-                                        action="river_delete.php?id=<?= e((string) $driver['id']) ?>"
+                                        action="driver_delete.php?id=<?= e((string) $driver['id']) ?>"
                                         onsubmit="return confirm('Delete this monthly driver?');">
                                         <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
                                     </form>
@@ -277,6 +396,58 @@ require __DIR__ . '/../includes/messages.php';
             </tbody>
         </table>
     </div>
+
+    <?php if ($totalPages > 1): ?>
+        <?php
+        $paginationQuery = $filterQuery;
+        ?>
+        <nav class="monthly-pagination fleet-pagination mt-3" aria-label="Monthly driver pagination">
+            <ul class="pagination justify-content-end mb-0 flex-wrap">
+                <?php if ($page > 1): ?>
+                    <?php $paginationQuery['page'] = (string) ($page - 1); ?>
+                    <li class="page-item">
+                        <a class="page-link" href="drivers.php?<?= e(http_build_query($paginationQuery)) ?>#monthlyDriversResultsSection">Previous</a>
+                    </li>
+                <?php endif; ?>
+
+                <?php
+                $paginationStart = max(1, $page - 2);
+                $paginationEnd = min($totalPages, $page + 2);
+                ?>
+
+                <?php if ($paginationStart > 1): ?>
+                    <?php $paginationQuery['page'] = '1'; ?>
+                    <li class="page-item">
+                        <a class="page-link" href="drivers.php?<?= e(http_build_query($paginationQuery)) ?>#monthlyDriversResultsSection">1</a>
+                    </li>
+                    <?php if ($paginationStart > 2): ?>
+                        <li class="page-item disabled"><span class="page-link">…</span></li>
+                    <?php endif; ?>
+                <?php endif; ?>
+
+                <?php for ($i = $paginationStart; $i <= $paginationEnd; $i++): ?>
+                    <?php $paginationQuery['page'] = (string) $i; ?>
+                    <li class="page-item <?= $i === $page ? 'active' : '' ?>">
+                        <a class="page-link" href="drivers.php?<?= e(http_build_query($paginationQuery)) ?>#monthlyDriversResultsSection">
+                            <?= e((string) $i) ?>
+                        </a>
+                    </li>
+                <?php endfor; ?>
+
+                <?php if ($paginationEnd < $totalPages): ?>
+                    <?php if ($paginationEnd < $totalPages - 1): ?>
+                        <li class="page-item disabled"><span class="page-link">…</span></li>
+                    <?php endif; ?>
+                    <?php $paginationQuery['page'] = (string) $totalPages; ?>
+                    <li class="page-item">
+                        <a class="page-link" href="drivers.php?<?= e(http_build_query($paginationQuery)) ?>#monthlyDriversResultsSection">
+                            <?= e((string) $totalPages) ?>
+                        </a>
+                    </li>
+                <?php endif; ?>
+            </ul>
+        </nav>
+    <?php endif; ?>
 </section>
 
 <?php require __DIR__ . '/../includes/footer.php'; ?>

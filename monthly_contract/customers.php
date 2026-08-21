@@ -27,6 +27,42 @@ $filters = [
     'expiry' => trim((string) ($_GET['expiry'] ?? '')),
 ];
 
+/*
+|--------------------------------------------------------------------------
+| SELECTED MONTH
+|--------------------------------------------------------------------------
+| Controls which monthly contract details are shown in each customer row.
+*/
+$selectedMonthValue = trim((string) ($_GET['month'] ?? ''));
+$selectedMonth = DateTimeImmutable::createFromFormat('!Y-m', $selectedMonthValue);
+if (!$selectedMonth || $selectedMonth->format('Y-m') !== $selectedMonthValue) {
+    $selectedMonth = new DateTimeImmutable('first day of this month');
+}
+$selectedMonthValue = $selectedMonth->format('Y-m');
+$selectedMonthStart = $selectedMonth->modify('first day of this month')->setTime(0, 0, 0);
+$selectedMonthEnd = $selectedMonth->modify('last day of this month')->setTime(23, 59, 59);
+$previousMonth = $selectedMonth->modify('-1 month');
+$nextMonth = $selectedMonth->modify('+1 month');
+$currentMonthValue = (new DateTimeImmutable('first day of this month'))->format('Y-m');
+
+$page = max(1, (int) ($_GET['page'] ?? 1));
+$perPage = 10;
+$totalRecords = 0;
+$totalPages = 1;
+
+$buildMonthUrl = static function (string $month) use ($filters): string {
+    $query = array_filter([
+        'search' => $filters['search'],
+        'status' => $filters['status'],
+        'assignment_type' => $filters['assignment_type'],
+        'rental_status' => $filters['rental_status'],
+        'expiry' => $filters['expiry'],
+        'month' => $month,
+        'page' => '1',
+    ], static fn(string $value): bool => $value !== '');
+    return 'customers.php?' . http_build_query($query) . '#monthlyCustomersResultsSection';
+};
+
 $customers = [];
 $stats = [
     'total' => 0,
@@ -190,6 +226,11 @@ if ($db instanceof mysqli) {
         $statement->close();
     }
 
+    $totalRecords = count($customers);
+    $totalPages = max(1, (int) ceil($totalRecords / $perPage));
+    $page = min($page, $totalPages);
+    $customers = array_slice($customers, ($page - 1) * $perPage, $perPage);
+
     $statsResult = $db->query(
         "SELECT
             COUNT(*) AS total,
@@ -252,6 +293,9 @@ if ($db instanceof mysqli && $customers !== []) {
             LEFT JOIN monthly_drivers AS d ON d.id = mc.driver_id
             LEFT JOIN operators AS o ON o.id = mc.operator_id
             WHERE mc.customer_id IN ($placeholders)
+              AND mc.start_date <= ?
+              AND mc.end_date >= ?
+              AND mc.status NOT IN ('Cancelled', 'Canceled', 'Cancel')
             ORDER BY mc.customer_id ASC, mc.end_date ASC, mc.id DESC
         ";
 
@@ -259,6 +303,9 @@ if ($db instanceof mysqli && $customers !== []) {
 
         if ($contractStatement instanceof mysqli_stmt) {
             $contractParams = $customerIds;
+            $contractParams[] = $selectedMonthEnd->format('Y-m-d H:i:s');
+            $contractParams[] = $selectedMonthStart->format('Y-m-d H:i:s');
+            $types .= 'ss';
             bind_statement_params($contractStatement, $types, $contractParams);
             $contractStatement->execute();
 
@@ -376,6 +423,20 @@ require __DIR__ . '/../includes/messages.php';
         <div class="d-grid align-self-end">
             <button type="submit" class="btn btn-shell">Filter</button>
         </div>
+        <input type="hidden" name="month" value="<?= e($selectedMonthValue) ?>">
+        <div class="fleet-month-filter" aria-label="Contract month selector">
+            <span class="fleet-month-label">Month</span>
+            <div class="fleet-month-nav">
+                <a class="fleet-month-arrow" href="<?= e($buildMonthUrl($previousMonth->format('Y-m'))) ?>" aria-label="Previous month" title="Previous month">‹</a>
+                <span class="fleet-month-value"><?= e($selectedMonth->format('F Y')) ?></span>
+                <a class="fleet-month-arrow" href="<?= e($buildMonthUrl($nextMonth->format('Y-m'))) ?>" aria-label="Next month" title="Next month">›</a>
+                <?php if ($selectedMonthValue !== $currentMonthValue): ?>
+                    <a class="fleet-month-today" href="<?= e($buildMonthUrl($currentMonthValue)) ?>">Today</a>
+                <?php else: ?>
+                    <span class="fleet-month-today is-current">Today</span>
+                <?php endif; ?>
+            </div>
+        </div>
     </form>
 </section>
 
@@ -386,7 +447,7 @@ require __DIR__ . '/../includes/messages.php';
             <p>
                 <?= e((string) count($customers)) ?>
                 customer<?= count($customers) === 1 ? '' : 's' ?> found.
-                Each customer appears once; monthly contracts are shown inside the expandable row.
+                Each customer appears once; monthly contracts for <?= e($selectedMonth->format('F Y')) ?> are shown inside the expandable row.
             </p>
         </div>
 
@@ -450,7 +511,7 @@ require __DIR__ . '/../includes/messages.php';
                             role="button"
                             aria-label="View details for <?= e($companyName !== '' ? $companyName : 'customer') ?>">
                             <td class="text-center customer-index-cell">
-                                <?= e((string) ($index + 1)) ?>
+                                <?= e((string) (($page - 1) * $perPage + $index + 1)) ?>
                             </td>
 
                             <td class="customer-company">
@@ -674,133 +735,58 @@ require __DIR__ . '/../includes/messages.php';
         </div>
         <div class="customer-drawer-body" id="customerDrawerBody"></div>
     </aside>
-</section>
-
-<script>
-    (function() {
-        var drawer = document.querySelector('.customer-detail-drawer');
-        var backdrop = document.querySelector('.customer-drawer-backdrop');
-        var drawerBody = document.getElementById('customerDrawerBody');
-        if (!drawer || !backdrop || !drawerBody) return;
-
-        var activeTrigger = null;
-
-        function openDrawer(sourceId, trigger) {
-            var source = document.getElementById(sourceId);
-            if (!source) return;
-
-            drawerBody.innerHTML = source.innerHTML;
-            drawer.classList.add('is-open');
-            backdrop.classList.add('is-open');
-            drawer.setAttribute('aria-hidden', 'false');
-            document.body.classList.add('customer-drawer-open');
-            activeTrigger = trigger || null;
-
-            if (activeTrigger) {
-                activeTrigger.setAttribute('aria-expanded', 'true');
-                activeTrigger.classList.add('is-selected');
-            }
-
-            requestAnimationFrame(function() {
-                var closeButton = drawer.querySelector('[data-customer-drawer-close]');
-                if (closeButton) closeButton.focus();
-            });
-        }
-
-        function closeDrawer() {
-            drawer.classList.remove('is-open');
-            backdrop.classList.remove('is-open');
-            drawer.setAttribute('aria-hidden', 'true');
-            document.body.classList.remove('customer-drawer-open');
-
-            if (activeTrigger) {
-                activeTrigger.setAttribute('aria-expanded', 'false');
-                activeTrigger.classList.remove('is-selected');
-                activeTrigger.focus();
-            }
-            activeTrigger = null;
-        }
-
-        document.querySelectorAll('[data-customer-drawer]').forEach(function(trigger) {
-            trigger.addEventListener('click', function(event) {
-                var sourceId = trigger.getAttribute('data-customer-drawer');
-                if (!sourceId) return;
-
-                // The Edit button has its own navigation and should not open the drawer.
-                if (event.target.closest('a')) return;
-                openDrawer(sourceId, trigger.closest('.customer-main-row'));
-            });
-
-            trigger.addEventListener('keydown', function(event) {
-                if (event.key !== 'Enter' && event.key !== ' ') return;
-                if (event.target.closest('a')) return;
-                event.preventDefault();
-                openDrawer(trigger.getAttribute('data-customer-drawer'), trigger.closest('.customer-main-row'));
-            });
-        });
-
-        document.querySelectorAll('[data-customer-drawer-close]').forEach(function(button) {
-            button.addEventListener('click', closeDrawer);
-        });
-
-        document.addEventListener('keydown', function(event) {
-            if (event.key === 'Escape' && drawer.classList.contains('is-open')) {
-                closeDrawer();
-            }
-        });
-    })();
-</script>
 
 
+    <?php if ($totalPages > 1): ?>
+        <?php
+        $paginationQuery = array_filter([
+            'search' => $filters['search'],
+            'status' => $filters['status'],
+            'assignment_type' => $filters['assignment_type'],
+            'rental_status' => $filters['rental_status'],
+            'expiry' => $filters['expiry'],
+            'month' => $selectedMonthValue,
+        ], static fn(string $value): bool => $value !== '');
+        ?>
+        <nav class="monthly-pagination fleet-pagination mt-3" aria-label="Customer pagination">
+            <ul class="pagination justify-content-end mb-0 flex-wrap">
+                <?php if ($page > 1): ?>
+                    <?php $paginationQuery['page'] = (string) ($page - 1); ?>
+                    <li class="page-item">
+                        <a class="page-link" href="customers.php?<?= e(http_build_query($paginationQuery)) ?>#monthlyCustomersResultsSection">Previous</a>
+                    </li>
+                <?php endif; ?>
 
-<script>
-    (function() {
-        var section = document.getElementById('monthlyCustomersResultsSection');
-        var toggle = document.getElementById('customerFullscreenToggle');
+                <?php
+                $paginationStart = max(1, $page - 2);
+                $paginationEnd = min($totalPages, $page + 2);
+                ?>
 
-        if (!section || !toggle) return;
+                <?php if ($paginationStart > 1): ?>
+                    <?php $paginationQuery['page'] = '1'; ?>
+                    <li class="page-item"><a class="page-link" href="customers.php?<?= e(http_build_query($paginationQuery)) ?>#monthlyCustomersResultsSection">1</a></li>
+                    <?php if ($paginationStart > 2): ?>
+                        <li class="page-item disabled"><span class="page-link">…</span></li>
+                    <?php endif; ?>
+                <?php endif; ?>
 
-        function isFullscreen() {
-            return document.fullscreenElement === section ||
-                document.webkitFullscreenElement === section ||
-                document.msFullscreenElement === section;
-        }
+                <?php for ($i = $paginationStart; $i <= $paginationEnd; $i++): ?>
+                    <?php $paginationQuery['page'] = (string) $i; ?>
+                    <li class="page-item <?= $i === $page ? 'active' : '' ?>">
+                        <a class="page-link" href="customers.php?<?= e(http_build_query($paginationQuery)) ?>#monthlyCustomersResultsSection">
+                            <?= e((string) $i) ?>
+                        </a>
+                    </li>
+                <?php endfor; ?>
 
-        function updateFullscreenButton() {
-            var active = isFullscreen();
-            toggle.textContent = active ? 'Exit Fullscreen' : 'Fullscreen Table';
-            toggle.setAttribute('aria-pressed', active ? 'true' : 'false');
-            toggle.setAttribute('aria-label', active ? 'Exit customer table fullscreen' : 'Open customer table fullscreen');
-        }
-
-        function enterFullscreen() {
-            var request = section.requestFullscreen || section.webkitRequestFullscreen || section.msRequestFullscreen;
-            if (!request) return;
-            var result = request.call(section);
-            if (result && typeof result.catch === 'function') result.catch(function() {});
-        }
-
-        function exitFullscreen() {
-            var exit = document.exitFullscreen || document.webkitExitFullscreen || document.msExitFullscreen;
-            if (!exit) return;
-            var result = exit.call(document);
-            if (result && typeof result.catch === 'function') result.catch(function() {});
-        }
-
-        toggle.addEventListener('click', function(event) {
-            event.preventDefault();
-            if (isFullscreen()) {
-                exitFullscreen();
-            } else {
-                enterFullscreen();
-            }
-        });
-
-        document.addEventListener('fullscreenchange', updateFullscreenButton);
-        document.addEventListener('webkitfullscreenchange', updateFullscreenButton);
-        document.addEventListener('MSFullscreenChange', updateFullscreenButton);
-        updateFullscreenButton();
-    })();
-</script>
-
-<?php require __DIR__ . '/../includes/footer.php'; ?>
+                <?php if ($paginationEnd < $totalPages): ?>
+                    <?php if ($paginationEnd < $totalPages - 1): ?>
+                        <li class="page-item disabled"><span class="page-link">…</span></li>
+                    <?php endif; ?>
+                    <?php $paginationQuery['page'] = (string) $totalPages; ?>
+                    <li class="page-item"><a class="page-link" href="customers.php?<?= e(http_build_query($paginationQuery)) ?>#monthlyCustomersResultsSection"><?= e((string) $totalPages) ?></a></li>
+                <?php endif; ?>
+            </ul>
+        </nav>
+    <?php endif; ?>
+</section><?php require __DIR__ . '/../includes/footer.php'; ?>

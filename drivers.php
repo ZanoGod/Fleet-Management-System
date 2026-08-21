@@ -16,6 +16,38 @@ $filters = [
     'status' => trim((string) ($_GET['status'] ?? '')),
 ];
 
+/*
+|--------------------------------------------------------------------------
+| SELECTED MONTH
+|--------------------------------------------------------------------------
+*/
+$selectedMonthValue = trim((string) ($_GET['month'] ?? ''));
+$selectedMonth = DateTimeImmutable::createFromFormat('!Y-m', $selectedMonthValue);
+if (!$selectedMonth || $selectedMonth->format('Y-m') !== $selectedMonthValue) {
+    $selectedMonth = new DateTimeImmutable('first day of this month');
+}
+$selectedMonthValue = $selectedMonth->format('Y-m');
+$selectedMonthStart = $selectedMonth->modify('first day of this month')->setTime(0, 0, 0);
+$selectedMonthEnd = $selectedMonth->modify('last day of this month')->setTime(23, 59, 59);
+$previousMonth = $selectedMonth->modify('-1 month');
+$nextMonth = $selectedMonth->modify('+1 month');
+$currentMonthValue = (new DateTimeImmutable('first day of this month'))->format('Y-m');
+
+$page = max(1, (int) ($_GET['page'] ?? 1));
+$perPage = 10;
+$totalRecords = 0;
+$totalPages = 1;
+
+$buildMonthUrl = static function (string $month) use ($filters): string {
+    $query = array_filter([
+        'search' => $filters['search'],
+        'status' => $filters['status'],
+        'month' => $month,
+        'page' => '1',
+    ], static fn(string $value): bool => $value !== '');
+    return 'drivers.php?' . http_build_query($query) . '#driversResultsSection';
+};
+
 $drivers = [];
 $driverAssignments = [];
 $stats = [
@@ -80,7 +112,45 @@ if ($db instanceof mysqli) {
         $statement->close();
     }
 
-    $driverAssignments = fetch_resource_booking_assignments($db, 'driver_id');
+    $totalRecords = count($drivers);
+    $totalPages = max(1, (int) ceil($totalRecords / $perPage));
+    $page = min($page, $totalPages);
+    $drivers = array_slice($drivers, ($page - 1) * $perPage, $perPage);
+
+    /* Load historical/current bookings that overlap the selected month. */
+    $driverAssignments = [];
+    $assignmentStatement = $db->prepare(
+        "SELECT
+            driver_id,
+            start_date,
+            end_date,
+            guest_company_name,
+            status,
+            id
+         FROM bookings
+         WHERE driver_id IS NOT NULL
+           AND start_date <= ?
+           AND end_date >= ?
+           AND status NOT IN ('Cancelled', 'Canceled', 'Cancel')
+         ORDER BY start_date ASC, end_date ASC, id ASC"
+    );
+
+    if ($assignmentStatement instanceof mysqli_stmt) {
+        bind_statement_params(
+            $assignmentStatement,
+            'ss',
+            [$selectedMonthEnd->format('Y-m-d H:i:s'), $selectedMonthStart->format('Y-m-d H:i:s')]
+        );
+        $assignmentStatement->execute();
+        $assignmentResult = $assignmentStatement->get_result();
+        while ($assignment = $assignmentResult->fetch_assoc()) {
+            $driverId = (int) ($assignment['driver_id'] ?? 0);
+            if ($driverId > 0) {
+                $driverAssignments[$driverId][] = $assignment;
+            }
+        }
+        $assignmentStatement->close();
+    }
 
     $statsResult = $db->query(
         "SELECT
@@ -100,6 +170,73 @@ if ($db instanceof mysqli) {
 require __DIR__ . '/includes/header.php';
 require __DIR__ . '/includes/messages.php';
 ?>
+
+
+<style>
+    .fleet-month-filter {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-left: 4px;
+        white-space: nowrap;
+    }
+    .fleet-month-label {
+        font-size: .78rem;
+        font-weight: 600;
+        color: var(--muted, #8f7a6d);
+    }
+    .fleet-month-nav {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .fleet-month-arrow,
+    .fleet-month-today {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 36px;
+        border: 1px solid rgba(92, 48, 27, .18);
+        border-radius: 10px;
+        background: #fff;
+        color: #5c301b;
+        text-decoration: none;
+        transition: .15s ease;
+    }
+    .fleet-month-arrow {
+        width: 36px;
+        font-size: 1.35rem;
+        line-height: 1;
+    }
+    .fleet-month-arrow:hover,
+    .fleet-month-today:hover {
+        border-color: #5c301b;
+        background: #faf5f0;
+        color: #5c301b;
+    }
+    .fleet-month-value {
+        min-width: 118px;
+        text-align: center;
+        font-weight: 700;
+        color: #5c301b;
+    }
+    .fleet-month-today {
+        padding: 0 12px;
+        font-size: .84rem;
+        font-weight: 600;
+    }
+    .fleet-month-today.is-current {
+        opacity: .5;
+        pointer-events: none;
+    }
+    @media (max-width: 1100px) {
+        .fleet-month-filter {
+            grid-column: 1 / -1;
+            justify-content: flex-start;
+            margin-top: 4px;
+        }
+    }
+</style>
 
 <section class="overview-grid">
     <div class="card-shell overview-card">
@@ -149,6 +286,21 @@ require __DIR__ . '/includes/messages.php';
         <div class="d-grid align-self-end">
             <button type="submit" class="btn btn-shell">Filter</button>
         </div>
+        <input type="hidden" name="month" value="<?= e($selectedMonthValue) ?>">
+        
+        <div class="fleet-month-filter" aria-label="Booking month selector">
+            <span class="fleet-month-label">Month</span>
+            <div class="fleet-month-nav">
+                <a class="fleet-month-arrow" href="<?= e($buildMonthUrl($previousMonth->format('Y-m'))) ?>" aria-label="Previous month" title="Previous month">‹</a>
+                <span class="fleet-month-value"><?= e($selectedMonth->format('F Y')) ?></span>
+                <a class="fleet-month-arrow" href="<?= e($buildMonthUrl($nextMonth->format('Y-m'))) ?>" aria-label="Next month" title="Next month">›</a>
+                <?php if ($selectedMonthValue !== $currentMonthValue): ?>
+                    <a class="fleet-month-today" href="<?= e($buildMonthUrl($currentMonthValue)) ?>">Today</a>
+                <?php else: ?>
+                    <span class="fleet-month-today is-current">Today</span>
+                <?php endif; ?>
+            </div>
+        </div>
     </form>
 </section>
 
@@ -156,7 +308,7 @@ require __DIR__ . '/includes/messages.php';
     <div class="section-title">
         <div>
             <h2>Driver List</h2>
-            <p>Keep driver records ready for daily fleet operations with numbered active bookings.</p>
+            <p>Keep driver records ready for daily fleet operations with bookings for <?= e($selectedMonth->format('F Y')) ?>.</p>
         </div>
     </div>
 
@@ -250,6 +402,59 @@ require __DIR__ . '/includes/messages.php';
             </tbody>
         </table>
     </div>
+
+
+
+
+    <?php if ($totalPages > 1): ?>
+        <?php
+        $paginationQuery = array_filter([
+            'search' => $filters['search'],
+            'status' => $filters['status'],
+            'month' => $selectedMonthValue,
+        ], static fn(string $value): bool => $value !== '');
+        ?>
+        <nav class="monthly-pagination fleet-pagination mt-3" aria-label="Driver pagination">
+            <ul class="pagination justify-content-end mb-0 flex-wrap">
+                <?php if ($page > 1): ?>
+                    <?php $paginationQuery['page'] = (string) ($page - 1); ?>
+                    <li class="page-item">
+                        <a class="page-link" href="drivers.php?<?= e(http_build_query($paginationQuery)) ?>#driversResultsSection">Previous</a>
+                    </li>
+                <?php endif; ?>
+
+                <?php
+                $paginationStart = max(1, $page - 2);
+                $paginationEnd = min($totalPages, $page + 2);
+                ?>
+
+                <?php if ($paginationStart > 1): ?>
+                    <?php $paginationQuery['page'] = '1'; ?>
+                    <li class="page-item"><a class="page-link" href="drivers.php?<?= e(http_build_query($paginationQuery)) ?>#driversResultsSection">1</a></li>
+                    <?php if ($paginationStart > 2): ?>
+                        <li class="page-item disabled"><span class="page-link">…</span></li>
+                    <?php endif; ?>
+                <?php endif; ?>
+
+                <?php for ($i = $paginationStart; $i <= $paginationEnd; $i++): ?>
+                    <?php $paginationQuery['page'] = (string) $i; ?>
+                    <li class="page-item <?= $i === $page ? 'active' : '' ?>">
+                        <a class="page-link" href="drivers.php?<?= e(http_build_query($paginationQuery)) ?>#driversResultsSection">
+                            <?= e((string) $i) ?>
+                        </a>
+                    </li>
+                <?php endfor; ?>
+
+                <?php if ($paginationEnd < $totalPages): ?>
+                    <?php if ($paginationEnd < $totalPages - 1): ?>
+                        <li class="page-item disabled"><span class="page-link">…</span></li>
+                    <?php endif; ?>
+                    <?php $paginationQuery['page'] = (string) $totalPages; ?>
+                    <li class="page-item"><a class="page-link" href="drivers.php?<?= e(http_build_query($paginationQuery)) ?>#driversResultsSection"><?= e((string) $totalPages) ?></a></li>
+                <?php endif; ?>
+            </ul>
+        </nav>
+    <?php endif; ?>
 </section>
 
 <?php require __DIR__ . '/includes/footer.php'; ?>
