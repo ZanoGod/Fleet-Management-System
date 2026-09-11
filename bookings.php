@@ -160,10 +160,12 @@ require __DIR__ . '/includes/messages.php';
         </div>
     </div>
 
-    <form method="get" action="bookings.php#bookingsResultsSection" class="filter-grid" data-preserve-scroll="bookingsFiltersSection">
+    <form method="get" action="bookings.php#bookingsResultsSection" class="filter-grid"
+        data-preserve-scroll="bookingsFiltersSection">
         <div>
             <label for="search" class="form-label">Search</label>
-            <input type="text" class="form-control" id="search" name="search" value="<?= e($filters['search']) ?>" placeholder="Guest, car, plate, operator, driver">
+            <input type="text" class="form-control" id="search" name="search" value="<?= e($filters['search']) ?>"
+                placeholder="Guest, car, plate, operator, driver">
         </div>
         <div>
             <label for="status" class="form-label">Status</label>
@@ -176,7 +178,8 @@ require __DIR__ . '/includes/messages.php';
         </div>
         <div>
             <label for="date_from" class="form-label">Start From</label>
-            <input type="date" class="form-control" id="date_from" name="date_from" value="<?= e($filters['date_from']) ?>">
+            <input type="date" class="form-control" id="date_from" name="date_from"
+                value="<?= e($filters['date_from']) ?>">
         </div>
         <div>
             <label for="date_to" class="form-label">End To</label>
@@ -194,7 +197,8 @@ require __DIR__ . '/includes/messages.php';
             <h2>Booking List</h2>
             <p>Each booking wraps neatly to fit your screen without horizontal scrolling.</p>
         </div>
-        <button type="button" class="btn btn-shell btn-sm" data-fullscreen-target="bookingsTablePanel">Fullscreen Table</button>
+        <button type="button" class="btn btn-shell btn-sm" data-fullscreen-target="bookingsTablePanel">Fullscreen
+            Table</button>
     </div>
 
     <div class="table-panel" id="bookingsTablePanel">
@@ -242,7 +246,8 @@ require __DIR__ . '/includes/messages.php';
                                 </td>
 
                                 <td>
-                                    <span class="table-pill operator-pill booking-operator-pill"><?= e($operatorDisplay) ?></span>
+                                    <span
+                                        class="table-pill operator-pill booking-operator-pill"><?= e($operatorDisplay) ?></span>
                                 </td>
 
                                 <td>
@@ -265,7 +270,8 @@ require __DIR__ . '/includes/messages.php';
                                 </td>
 
                                 <td>
-                                    <span class="status-pill <?= e(status_badge_class($booking['status'])) ?>"><?= e($booking['status']) ?></span>
+                                    <span
+                                        class="status-pill <?= e(status_badge_class($booking['status'])) ?>"><?= e($booking['status']) ?></span>
                                 </td>
 
                                 <td>
@@ -276,9 +282,14 @@ require __DIR__ . '/includes/messages.php';
 
                                 <td class="text-center">
                                     <div class="table-actions table-actions-compact">
-                                        <a class="btn btn-sm btn-shell" href="edit.php?id=<?= e((string) $booking['id']) ?>">Edit</a>
-                                        <form method="post" action="delete.php?id=<?= e((string) $booking['id']) ?>" onsubmit="return confirm('Delete this booking?');">
-                                            <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                                        <a class="btn btn-sm btn-shell"
+                                            href="edit.php?id=<?= e((string) $booking['id']) ?>">Edit</a>
+                                        <form method="post" action="delete" class="delete-booking-form"
+                                            data-booking-name="<?= e($guestName) ?>">
+                                            <input type="hidden" name="id" value="<?= e((string) $booking['id']) ?>">
+                                            <button type="button" class="btn btn-sm btn-outline-danger delete-booking-btn">
+                                                <span style="pointer-events: none;">Delete</span>
+                                            </button>
                                         </form>
                                     </div>
                                 </td>
@@ -290,5 +301,156 @@ require __DIR__ . '/includes/messages.php';
         </div>
     </div>
 </section>
+
+
+<div class="delete-modal" id="deleteBookingModal" aria-hidden="true" role="dialog" aria-modal="true"
+    aria-labelledby="deleteModalTitle">
+    <div class="delete-modal-backdrop"></div>
+    <div class="delete-modal-dialog">
+        <div class="delete-modal-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                stroke-linejoin="round" aria-hidden="true">
+                <path d="M3 6h18"></path>
+                <path d="M8 6V4h8v2"></path>
+                <path d="M19 6l-1 14H6L5 6"></path>
+                <path d="M10 11v5"></path>
+                <path d="M14 11v5"></path>
+            </svg>
+        </div>
+        <div class="delete-modal-content">
+            <h3 id="deleteModalTitle"> Delete booking? </h3>
+            <p> Are you sure you want to delete <strong id="deleteBookingName">this booking</strong>? </p>
+            <div class="delete-modal-warning">
+                <span class="delete-warning-icon">!</span>
+                <span> This action cannot be undone. </span>
+            </div>
+        </div>
+        <div class="delete-modal-actions">
+            <button type="button" class="delete-modal-cancel" id="deleteModalCancel"> Cancel </button>
+            <button type="button" class="delete-modal-confirm" id="deleteModalConfirm">
+                <span class="delete-confirm-text"> Delete Booking </span>
+                <span class="delete-confirm-loading" aria-hidden="true">
+                    <span class="delete-spinner"></span> Deleting...
+                </span>
+            </button>
+        </div>
+    </div>
+</div>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const modal = document.getElementById('deleteBookingModal');
+        const modalName = document.getElementById('deleteBookingName');
+        const cancelButton = document.getElementById('deleteModalCancel');
+        const confirmButton = document.getElementById('deleteModalConfirm');
+        const backdrop = modal ? modal.querySelector('.delete-modal-backdrop') : null;
+        let activeForm = null;
+        let activeRow = null;
+
+        // CRITICAL FIX: Relocate the modal to the body root immediately upon page load
+        // This breaks the modal out of any parent CSS transform/overflow contexts
+        if (modal && modal.parentElement !== document.body) {
+            document.body.appendChild(modal);
+        }
+
+        function openDeleteModal(form) {
+            activeForm = form;
+            activeRow = form.closest('tr');
+            const bookingName = form.dataset.bookingName || 'this booking';
+
+            if (modalName) modalName.textContent = bookingName;
+
+            if (modal) {
+                modal.style.display = 'flex';
+                modal.style.opacity = '1';
+                modal.style.pointerEvents = 'auto';
+                modal.classList.add('is-open');
+                modal.setAttribute('aria-hidden', 'false');
+            }
+
+            document.body.classList.add('delete-modal-open');
+            if (cancelButton) {
+                setTimeout(() => cancelButton.focus({
+                    preventScroll: true
+                }), 50);
+            }
+        }
+
+        function closeDeleteModal() {
+            if (confirmButton && confirmButton.classList.contains('is-loading')) return;
+
+            if (modal) {
+                modal.style.display = 'none';
+                modal.style.opacity = '0';
+                modal.style.pointerEvents = 'none';
+                modal.classList.remove('is-open');
+                modal.setAttribute('aria-hidden', 'true');
+            }
+
+            document.body.classList.remove('delete-modal-open');
+
+            if (confirmButton) {
+                confirmButton.classList.remove('is-loading');
+                confirmButton.disabled = false;
+            }
+
+            activeForm = null;
+            activeRow = null;
+        }
+
+
+        // Attach delegated click listener for delete buttons
+        document.addEventListener('click', function(event) {
+            const deleteBtn = event.target.closest('.delete-booking-btn');
+            if (deleteBtn) {
+                event.preventDefault();
+                event.stopPropagation();
+                const form = deleteBtn.closest('.delete-booking-form');
+                if (form) openDeleteModal(form);
+            }
+        });
+
+        if (cancelButton) cancelButton.addEventListener('click', closeDeleteModal);
+        if (backdrop) backdrop.addEventListener('click', closeDeleteModal);
+
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape' && modal && modal.classList.contains('is-open')) {
+                closeDeleteModal();
+            }
+        });
+
+        if (confirmButton) {
+            confirmButton.addEventListener('click', function(e) {
+                e.preventDefault();
+                if (!activeForm) return;
+
+                confirmButton.classList.add('is-loading');
+                confirmButton.disabled = true;
+
+                if (activeRow) {
+                    activeRow.classList.add('booking-row-deleting');
+                }
+
+                // Append a hidden form directly to body to guarantee a clean POST request
+                const tempForm = document.createElement('form');
+                tempForm.method = 'POST';
+                tempForm.action = activeForm.getAttribute('action') || 'delete.php';
+                tempForm.style.display = 'none';
+
+                // Copy all input values (including hidden ID field)
+                const inputs = activeForm.querySelectorAll('input, select, textarea');
+                inputs.forEach(input => {
+                    const clone = input.cloneNode(true);
+                    tempForm.appendChild(clone);
+                });
+
+                document.body.appendChild(tempForm);
+
+                setTimeout(function() {
+                    tempForm.submit();
+                }, 150);
+            });
+        }
+    });
+</script>
 
 <?php require __DIR__ . '/includes/footer.php'; ?>

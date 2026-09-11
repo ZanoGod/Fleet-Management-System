@@ -7,20 +7,21 @@
     --tbl-min-width: 950px;
     --pad-y: 0.55rem;
     --pad-x: 0.4rem;
-    
+
     --font-xs: 0.74rem;
     --font-sm: 0.78rem;
     --font-md: 0.82rem;
     --font-lg: 0.86rem;
     --font-xl: 0.9rem;
-    
+
     --pill-width: 5.25rem;
     --btn-width: 4.25rem;
 
     width: 100%;
     min-width: var(--tbl-min-width);
     table-layout: fixed;
-    transition: all 0.3s ease; /* Smooth scaling */
+    transition: all 0.3s ease;
+    /* Smooth scaling */
 }
 
 /* 2. SIDEBAR COLLAPSED STATE (Medium Room) */
@@ -28,13 +29,13 @@ body.sidebar-collapsed .booking-table {
     --tbl-min-width: 1150px;
     --pad-y: 0.75rem;
     --pad-x: 0.6rem;
-    
+
     --font-xs: 0.8rem;
     --font-sm: 0.85rem;
     --font-md: 0.9rem;
     --font-lg: 0.95rem;
     --font-xl: 1rem;
-    
+
     --pill-width: 6rem;
     --btn-width: 5rem;
 }
@@ -45,13 +46,13 @@ body.sidebar-collapsed .booking-table {
     --tbl-min-width: 1400px;
     --pad-y: 1rem;
     --pad-x: 0.85rem;
-    
+
     --font-xs: 0.9rem;
     --font-sm: 0.95rem;
     --font-md: 1rem;
     --font-lg: 1.05rem;
     --font-xl: 1.15rem;
-    
+
     --pill-width: 7rem;
     --btn-width: 5.5rem;
 }
@@ -82,15 +83,60 @@ body.sidebar-collapsed .booking-table {
 }
 
 /* Rebalanced columns */
-.booking-table th:nth-child(1), .booking-table td:nth-child(1) { width: 12%; } /* Guest */
-.booking-table th:nth-child(2), .booking-table td:nth-child(2) { width: 13%; } /* Car */
-.booking-table th:nth-child(3), .booking-table td:nth-child(3) { width: 13%; } /* Operator */
-.booking-table th:nth-child(4), .booking-table td:nth-child(4) { width: 5%; }  /* E/O */
-.booking-table th:nth-child(5), .booking-table td:nth-child(5) { width: 11%; } /* Dates */
-.booking-table th:nth-child(6), .booking-table td:nth-child(6) { width: 15%; } /* Driver */
-.booking-table th:nth-child(7), .booking-table td:nth-child(7) { width: 9%; }  /* Status */
-.booking-table th:nth-child(8), .booking-table td:nth-child(8) { width: 10%; } /* Remark */
-.booking-table th:nth-child(9), .booking-table td:nth-child(9) { width: 12%; } /* Action */
+.booking-table th:nth-child(1),
+.booking-table td:nth-child(1) {
+    width: 12%;
+}
+
+/* Guest */
+.booking-table th:nth-child(2),
+.booking-table td:nth-child(2) {
+    width: 13%;
+}
+
+/* Car */
+.booking-table th:nth-child(3),
+.booking-table td:nth-child(3) {
+    width: 13%;
+}
+
+/* Operator */
+.booking-table th:nth-child(4),
+.booking-table td:nth-child(4) {
+    width: 5%;
+}
+
+/* E/O */
+.booking-table th:nth-child(5),
+.booking-table td:nth-child(5) {
+    width: 11%;
+}
+
+/* Dates */
+.booking-table th:nth-child(6),
+.booking-table td:nth-child(6) {
+    width: 15%;
+}
+
+/* Driver */
+.booking-table th:nth-child(7),
+.booking-table td:nth-child(7) {
+    width: 9%;
+}
+
+/* Status */
+.booking-table th:nth-child(8),
+.booking-table td:nth-child(8) {
+    width: 10%;
+}
+
+/* Remark */
+.booking-table th:nth-child(9),
+.booking-table td:nth-child(9) {
+    width: 12%;
+}
+
+/* Action */
 
 /* ---------------------------------------------------------
    TYPOGRAPHY & ELEMENTS (Using Variables)
@@ -117,10 +163,10 @@ body.sidebar-collapsed .booking-table {
     text-align: left;
     white-space: normal;
     line-height: 1.2;
-    padding: calc(var(--pad-y) * 0.4) calc(var(--pad-x) * 1.2) !important; 
+    padding: calc(var(--pad-y) * 0.4) calc(var(--pad-x) * 1.2) !important;
 }
 
-.booking-car-pill, 
+.booking-car-pill,
 .booking-operator-pill {
     font-size: var(--font-sm);
 }
@@ -186,5 +232,542 @@ body.sidebar-collapsed .booking-table {
 @media (max-width: 991.98px) {
     .booking-table {
         table-layout: auto;
+    }
+}
+
+
+/* ========================================================= Booking Delete UX ========================================================= */
+.delete-booking-form {
+    display: inline-block;
+    margin: 0;
+}
+
+.delete-booking-btn {
+    position: relative;
+    min-width: 72px;
+    transition: opacity 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.delete-booking-btn:hover {
+    transform: translateY(-1px);
+}
+
+.delete-booking-btn:active {
+    transform: scale(0.96);
+}
+
+.delete-booking-btn.is-deleting {
+    pointer-events: none;
+    opacity: 0.75;
+}
+
+.delete-booking-btn .delete-btn-loading {
+    display: none;
+}
+
+.delete-booking-btn.is-deleting .delete-btn-text {
+    display: none;
+}
+
+.delete-booking-btn.is-deleting .delete-btn-loading {
+    display: inline;
+}
+
+/* Spinner */
+.delete-booking-btn.is-deleting::after {
+    content: "";
+    width: 13px;
+    height: 13px;
+    margin-left: 6px;
+    display: inline-block;
+    vertical-align: -2px;
+    border: 2px solid currentColor;
+    border-right-color: transparent;
+    border-radius: 50%;
+    animation: bookingDeleteSpin 0.7s linear infinite;
+}
+
+@keyframes bookingDeleteSpin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Row disappearing animation */
+.booking-row-deleting {
+    animation: bookingRowDelete 0.45s ease forwards;
+    pointer-events: none;
+}
+
+@keyframes bookingRowDelete {
+    0% {
+        opacity: 1;
+        transform: translateX(0);
+    }
+
+    60% {
+        opacity: 0.35;
+        transform: translateX(12px);
+    }
+
+    100% {
+        opacity: 0;
+        transform: translateX(30px);
+    }
+}
+
+/* Flash messages */
+.flash-message {
+    animation: flashMessageIn 0.35s ease-out, flashMessagePulse 0.5s ease-out 0.35s;
+}
+
+@keyframes flashMessageIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes flashMessagePulse {
+    0% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-2px);
+    }
+
+    100% {
+        transform: translateY(0);
+    }
+}
+
+/* Respect accessibility settings */
+@media (prefers-reduced-motion: reduce) {
+
+    .delete-booking-btn,
+    .flash-message {
+        animation: none !important;
+        transition: none !important;
+    }
+
+    .booking-row-deleting {
+        animation: none !important;
+        opacity: 0;
+    }
+}
+
+/* =========================================================
+   MODERN DELETE CONFIRMATION MODAL
+   ========================================================= */
+.delete-modal {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    z-index: 9999999 !important;
+
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s ease;
+}
+
+.delete-modal.is-open {
+    display: flex !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+
+}
+
+/* Ensure backdrop covers full viewport smoothly */
+.delete-modal-backdrop {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    background: rgba(15, 23, 42, 0.62);
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+    z-index: 1;
+}
+
+.delete-modal-dialog {
+    position: relative !important;
+    z-index: 2 !important;
+
+    width: min(100%, 440px);
+    background: #ffffff !important;
+    /* Fixes transparency issue */
+    border-radius: 20px;
+    padding: 30px;
+
+    box-shadow: 0 25px 70px rgba(15, 23, 42, 0.25),
+        0 8px 25px rgba(15, 23, 42, 0.12);
+
+    transform: translateY(20px) scale(0.96);
+    transition: transform 0.3s cubic-bezier(.2, .8, .2, 1);
+}
+
+
+.delete-modal.is-open .delete-modal-dialog {
+    transform: translateY(0) scale(1);
+}
+
+
+/* =========================================================
+   DELETE ICON
+   ========================================================= */
+
+.delete-modal-icon {
+    width: 62px;
+    height: 62px;
+
+    margin: 0 auto 20px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 50%;
+
+    background: #fff1f2;
+
+    color: #dc2626;
+}
+
+.delete-modal-icon svg {
+    width: 29px;
+    height: 29px;
+}
+
+
+/* =========================================================
+   MODAL TEXT
+   ========================================================= */
+
+.delete-modal-content {
+    text-align: center;
+}
+
+.delete-modal-content h3 {
+    margin: 0 0 10px;
+
+    color: #111827;
+
+    font-size: 22px;
+    font-weight: 700;
+
+    letter-spacing: -0.02em;
+}
+
+.delete-modal-content p {
+    margin: 0;
+
+    color: #6b7280;
+
+    font-size: 15px;
+
+    line-height: 1.6;
+}
+
+.delete-modal-content strong {
+    color: #374151;
+
+    font-weight: 600;
+}
+
+
+/* =========================================================
+   WARNING MESSAGE
+   ========================================================= */
+
+.delete-modal-warning {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    gap: 8px;
+
+    margin-top: 18px;
+
+    padding: 11px 14px;
+
+    border-radius: 10px;
+
+    background: #fff7ed;
+
+    color: #9a3412;
+
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.delete-warning-icon {
+    width: 18px;
+    height: 18px;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    flex-shrink: 0;
+
+    border-radius: 50%;
+
+    background: #f97316;
+
+    color: #ffffff;
+
+    font-size: 12px;
+    font-weight: 700;
+}
+
+
+/* =========================================================
+   MODAL BUTTONS
+   ========================================================= */
+
+.delete-modal-actions {
+    display: flex;
+
+    gap: 10px;
+
+    margin-top: 25px;
+}
+
+.delete-modal-actions button {
+    flex: 1;
+
+    min-height: 46px;
+
+    border-radius: 10px;
+
+    font-family: inherit;
+
+    font-size: 14px;
+    font-weight: 600;
+
+    cursor: pointer;
+
+    transition:
+        transform 0.18s ease,
+        box-shadow 0.18s ease,
+        background 0.18s ease,
+        opacity 0.18s ease;
+}
+
+.delete-modal-actions button:active {
+    transform: scale(0.97);
+}
+
+
+/* =========================================================
+   CANCEL BUTTON
+   ========================================================= */
+
+.delete-modal-cancel {
+    border: 1px solid #e5e7eb;
+
+    background: #ffffff;
+
+    color: #374151;
+}
+
+.delete-modal-cancel:hover {
+    background: #f9fafb;
+
+    box-shadow:
+        0 3px 10px rgba(15, 23, 42, 0.08);
+}
+
+
+/* =========================================================
+   DELETE BUTTON
+   ========================================================= */
+
+.delete-modal-confirm {
+    border: 1px solid #dc2626;
+
+    background: #dc2626;
+
+    color: #ffffff;
+
+    box-shadow:
+        0 5px 14px rgba(220, 38, 38, 0.22);
+}
+
+.delete-modal-confirm:hover {
+    background: #b91c1c;
+
+    box-shadow:
+        0 7px 18px rgba(220, 38, 38, 0.30);
+}
+
+
+/* =========================================================
+   DELETE LOADING STATE
+   ========================================================= */
+
+.delete-confirm-loading {
+    display: none;
+
+    align-items: center;
+    justify-content: center;
+
+    gap: 8px;
+}
+
+.delete-modal-confirm.is-loading {
+    pointer-events: none;
+
+    opacity: 0.8;
+}
+
+.delete-modal-confirm.is-loading .delete-confirm-text {
+    display: none;
+}
+
+.delete-modal-confirm.is-loading .delete-confirm-loading {
+    display: inline-flex;
+}
+
+
+/* =========================================================
+   LOADING SPINNER
+   ========================================================= */
+
+.delete-spinner {
+    width: 15px;
+    height: 15px;
+
+    border: 2px solid rgba(255, 255, 255, 0.45);
+
+    border-top-color: #ffffff;
+
+    border-radius: 50%;
+
+    animation: deleteSpinner 0.7s linear infinite;
+}
+
+@keyframes deleteSpinner {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+
+/* =========================================================
+   TABLE ROW DELETE ANIMATION
+   ========================================================= */
+
+.booking-row-deleting {
+    overflow: hidden;
+
+    animation:
+        deleteBookingRow 0.5s ease forwards;
+
+    pointer-events: none;
+}
+
+@keyframes deleteBookingRow {
+
+    0% {
+        opacity: 1;
+
+        transform: translateX(0);
+    }
+
+    40% {
+        opacity: 0.5;
+
+        transform: translateX(8px);
+    }
+
+    100% {
+        opacity: 0;
+
+        transform: translateX(35px);
+    }
+}
+
+
+/* =========================================================
+   PREVENT PAGE SCROLL WHEN MODAL IS OPEN
+   ========================================================= */
+
+body.delete-modal-open {
+    overflow: hidden;
+}
+
+
+/* =========================================================
+   MOBILE
+   ========================================================= */
+
+@media (max-width: 576px) {
+
+    .delete-modal {
+        padding: 15px;
+    }
+
+    .delete-modal-dialog {
+        width: min(100%, 440px);
+
+        padding: 24px 20px;
+
+        border-radius: 17px;
+    }
+
+    .delete-modal-icon {
+        width: 56px;
+        height: 56px;
+    }
+
+    .delete-modal-content h3 {
+        font-size: 20px;
+    }
+
+    .delete-modal-actions {
+        flex-direction: column-reverse;
+    }
+
+    .delete-modal-actions button {
+        width: 100%;
+    }
+}
+
+
+/* =========================================================
+   ACCESSIBILITY
+   ========================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+
+    .delete-modal,
+    .delete-modal-dialog,
+    .delete-modal-actions button {
+        transition: none !important;
+    }
+
+    .delete-spinner {
+        animation: none !important;
+    }
+
+    .booking-row-deleting {
+        animation: none !important;
+
+        opacity: 0;
     }
 }
