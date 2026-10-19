@@ -7,7 +7,7 @@ require_once __DIR__ . '/includes/bootstrap.php';
 $activePage = 'cars';
 $pageTitle = 'Fleet Management';
 $pageSummary = 'Manage all company vehicles and booking assignments.';
-$pageActions = '<a class="btn btn-shell" href="monthly-contracts.php">Monthly Contract</a> <a class="btn btn-accent" href="car-create.php">Add Vehicle</a>';
+$pageActions = ' <a class="btn btn-accent" href="car-create.php">Add Vehicle</a>';
 $pageStyles = ['assets/css/cars.css'];
 
 $flash = get_flash();
