@@ -789,4 +789,78 @@ require __DIR__ . '/../includes/messages.php';
             </ul>
         </nav>
     <?php endif; ?>
-</section><?php require __DIR__ . '/../includes/footer.php'; ?>
+</section>
+
+<script>
+    (function () {
+        const drawer = document.querySelector('.customer-detail-drawer');
+        const backdrop = document.querySelector('.customer-drawer-backdrop');
+        const drawerBody = document.getElementById('customerDrawerBody');
+
+        if (!drawer || !backdrop || !drawerBody) {
+            return;
+        }
+
+        function openDrawer(trigger) {
+            const sourceId = trigger.getAttribute('data-customer-drawer');
+            const source = sourceId ? document.getElementById(sourceId) : null;
+
+            if (!source) {
+                return;
+            }
+
+            drawerBody.innerHTML = source.innerHTML;
+            drawer.classList.add('is-open');
+            backdrop.classList.add('is-open');
+            drawer.setAttribute('aria-hidden', 'false');
+            document.body.classList.add('customer-drawer-open');
+        }
+
+        function closeDrawer() {
+            drawer.classList.remove('is-open');
+            backdrop.classList.remove('is-open');
+            drawer.setAttribute('aria-hidden', 'true');
+            document.body.classList.remove('customer-drawer-open');
+            drawerBody.innerHTML = '';
+        }
+
+        /*
+         * Single delegated listener so a click on the View button
+         * inside a trigger row fires exactly once.
+         */
+        document.addEventListener('click', function (event) {
+            const trigger = event.target.closest('[data-customer-drawer]');
+
+            if (trigger) {
+                event.preventDefault();
+                openDrawer(trigger);
+                return;
+            }
+
+            if (event.target.closest('[data-customer-drawer-close]')) {
+                event.preventDefault();
+                closeDrawer();
+            }
+        });
+
+        document.addEventListener('keydown', function (event) {
+            if (event.key === 'Escape' && drawer.classList.contains('is-open')) {
+                closeDrawer();
+                return;
+            }
+
+            if (
+                (event.key === 'Enter' || event.key === ' ')
+                && document.activeElement
+                && document.activeElement.classList.contains('customer-drawer-trigger')
+            ) {
+                event.preventDefault();
+                openDrawer(document.activeElement);
+            }
+        });
+    })();
+</script>
+
+<?php
+require __DIR__ . '/../includes/footer.php';
+?>
